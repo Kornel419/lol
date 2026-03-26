@@ -1,45 +1,46 @@
 @echo off
-setlocal enabledelayedexpansion
-title CHIPS COMPILER v2.0
+:: Ustawienie kodowania na UTF-8, żeby nie było krzaków
+chcp 65001 >nul
+:: Przejście do folderu, w którym znajduje się ten plik .bat
+cd /d "%~dp0"
+title CHIPS COMPILER - FOLDER: lol-main
 
-echo [!] Szukanie kompilatora csc.exe w zasobach systemowych...
+echo [!] Rozpoczynam kompilację w folderze: %cd%
 
-:: Sprawdzanie najpopularniejszych lokalizacji .NET 4.0 (standard w Win 10/11)
-set "csc_path=%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\csc.exe"
-
-if not exist "!csc_path!" (
-    echo [?] Nie znaleziono w v4.0, szukam w innych wersjach...
-    for /r "%SystemRoot%\Microsoft.NET\Framework" %%i in (csc.exe) do (
-        set "csc_path=%%i"
-    )
+:: Szukanie kompilatora (sprawdzamy najpierw 64-bit, potem 32-bit)
+set "csc="
+if exist "%SystemRoot%\Microsoft.NET\Framework64\v4.0.30319\csc.exe" (
+    set "csc=%SystemRoot%\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+) else if exist "%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\csc.exe" (
+    set "csc=%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\csc.exe"
 )
 
-if not exist "!csc_path!" (
-    echo [ERROR] Brak kompilatora C# w systemie. 
-    echo Zainstaluj .NET Framework lub sprawdz uprawnienia.
+if not defined csc (
+    echo [BŁĄD] Nie znaleziono csc.exe. Zainstaluj .NET Framework 4.5+.
     pause
     exit /b
 )
 
-echo [OK] Kompilator znaleziony: "!csc_path!"
-echo [PROCESS] Budowanie Idiot.exe...
+echo [OK] Kompilator: %csc%
 
-:: Kompilacja z flagami:
-:: /target:winexe - ukrywa okno konsoli po odpaleniu Idiot.exe
-:: /optimize - sprawia, ze kod dziala szybciej (wazne przy GDI)
-:: /platform:x86 - wymusza 32-bit dla lepszej kompatybilnosci z MBR
-"!csc_path!" /target:winexe /optimize /platform:x86 /out:Idiot.exe Idiot.cs
+:: Sprawdzenie czy Idiot.cs istnieje w tym folderze
+if not exist "Idiot.cs" (
+    echo [BŁĄD] Nie znaleziono pliku Idiot.cs w folderze lol-main!
+    echo Upewnij się, że nazwa pliku to Idiot.cs a nie Idiot.cs.txt
+    pause
+    exit /b
+)
+
+echo [PROCESS] Budowanie Idiot.exe...
+"%csc%" /target:winexe /optimize /out:Idiot.exe Idiot.cs
 
 if %errorlevel% equ 0 (
     echo.
-    echo [PIKOBELO] Kompilacja zakonczona sukcesem.
-    echo Plik: %~dp0Idiot.exe
+    echo [SUKCES] Plik Idiot.exe jest gotowy w lol-main.
+    echo Pikobelo.
 ) else (
     echo.
-    echo [BŁĄD] Kompilacja sie wywalila. Sprawdz czy:
-    echo 1. Plik Idiot.cs jest w tym samym folderze.
-    echo 2. Nie masz bledu w kodzie (literowki).
-    echo 3. Antywirus nie zablokowal zapisu EXE.
+    echo [STOP] Kompilacja nieudana. Sprawdź błędy powyżej.
 )
 
 pause
