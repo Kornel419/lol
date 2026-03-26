@@ -1,4 +1,5 @@
 @echo off
+color b
 setlocal
 :: Przejście do folderu roboczego
 cd /d "%~dp0"
