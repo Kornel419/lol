@@ -1,29 +1,25 @@
 @echo off
-:: Wymuszenie folderu, w którym jest ten plik .bat
 cd /d "%~dp0"
-title Kompilator Idiot.cs
+title Idiot Compiler - HARD MODE
 
-:: Sciezka do kompilatora
-set "csc=C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe"
+:: 1. Kopiujemy kompilator do Twojego folderu lol-main, zeby nie bylo problemow ze sciezkami
+copy "C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe" "csc_local.exe" >nul
+copy "C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe.config" "csc_local.exe.config" >nul
 
-echo [INFO] Folder roboczy: %cd%
-echo [INFO] Szukam pliku: Idiot.cs
+echo [!] Kompilator skopiowany lokalnie do lol-main.
+echo [!] Plik do kompilacji: Idiot.cs
 
-if not exist "Idiot.cs" (
-    echo [ERROR] Nie widze pliku Idiot.cs! 
-    echo Upewnij sie, ze nazwa to Idiot.cs a nie Idiot.cs.txt
-    dir /b
-    pause
-    exit
-)
+:: 2. Odpalamy kompilacje z lokalnego pliku
+csc_local.exe /target:winexe /optimize /out:Idiot.exe Idiot.cs
 
-echo [PROCESS] Kompilacja...
-"%csc%" /target:winexe /optimize /out:Idiot.exe Idiot.cs
-
-if exist "Idiot.exe" (
-    echo [SUKCES] Pikobelo! Plik Idiot.exe stworzony.
+echo.
+if exist Idiot.exe (
+    echo [PIKOBELO] Idiot.exe stworzony pomyślnie!
+    :: Sprzątamy po sobie
+    del csc_local.exe
+    del csc_local.exe.config
 ) else (
-    echo [BLAD] Kompilacja sie nie udala.
+    echo [ERROR] Kompilacja nieudana. Sprawdz bledy powyzej.
 )
 
 pause
