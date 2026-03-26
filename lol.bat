@@ -1,22 +1,31 @@
 @echo off
-title COMPILER DEBUG
-cd /d "%~dp0"
+setlocal enabledelayedexpansion
 
-echo [1] Checking for Idiot.cs...
-if not exist "Idiot.cs" echo ERROR: Idiot.cs not found! & pause & exit
+echo [CHIPS COMPILER] Szukanie csc.exe...
 
-echo [2] Searching for Compiler...
-set "C=C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
-if not exist "%C%" set "C=C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe"
-if not exist "%C%" echo ERROR: .NET Framework not found! & pause & exit
-
-echo [3] Compiling...
-"%C%" /target:winexe /out:"Minecraft_Crack.exe" "Idiot.cs"
-
-echo [4] Check result:
-if exist "Minecraft_Crack.exe" (
-    echo SUCCESS! Minecraft_Crack.exe is ready.
-) else (
-    echo FAILED! Check your Idiot.cs code for errors.
+:: Szukanie najnowszej wersji kompilatora .NET
+set "csc="
+for /d %%D in (%SystemRoot%\Microsoft.NET\Framework\v4*) do (
+    if exist "%%D\csc.exe" set "csc=%%D\csc.exe"
 )
+
+if not defined csc (
+    echo [ERROR] Nie znaleziono kompilatora .NET Framework 4.0+.
+    pause
+    exit /b
+)
+
+echo [OK] Znaleziono: !csc!
+echo [PROCESS] Kompilacja Idiot.cs -> Idiot.exe...
+
+:: Kompilacja: /target:winexe (brak konsoli), /out:nazwa pliku
+"!csc!" /target:winexe /out:Idiot.exe Idiot.cs
+
+if %errorlevel% equ 0 (
+    echo [SUCCESS] Plik Idiot.exe zostal utworzony w tym folderze.
+    echo Pikobelo.
+) else (
+    echo [FAILED] Blad podczas kompilacji. Sprawdz kod Idiot.cs.
+)
+
 pause
