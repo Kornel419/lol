@@ -1,46 +1,22 @@
 @echo off
-:: Ustawienie kodowania na UTF-8, żeby nie było krzaków
-chcp 65001 >nul
-:: Przejście do folderu, w którym znajduje się ten plik .bat
-cd /d "%~dp0"
-title CHIPS COMPILER - FOLDER: lol-main
+title Idiot Compiler
+set "csc=C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe"
 
-echo [!] Rozpoczynam kompilację w folderze: %cd%
-
-:: Szukanie kompilatora (sprawdzamy najpierw 64-bit, potem 32-bit)
-set "csc="
-if exist "%SystemRoot%\Microsoft.NET\Framework64\v4.0.30319\csc.exe" (
-    set "csc=%SystemRoot%\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
-) else if exist "%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\csc.exe" (
-    set "csc=%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\csc.exe"
+if not exist "%csc%" (
+    echo [!] Nie widze kompilatora w glownym folderze v4.0.
+    echo [!] Szukam gdziekolwiek...
+    for /r C:\Windows\Microsoft.NET\Framework %%i in (csc.exe) do set "csc=%%i"
 )
 
-if not defined csc (
-    echo [BŁĄD] Nie znaleziono csc.exe. Zainstaluj .NET Framework 4.5+.
-    pause
-    exit /b
-)
+echo Kompilator: %csc%
+echo Plik: Idiot.cs
 
-echo [OK] Kompilator: %csc%
-
-:: Sprawdzenie czy Idiot.cs istnieje w tym folderze
-if not exist "Idiot.cs" (
-    echo [BŁĄD] Nie znaleziono pliku Idiot.cs w folderze lol-main!
-    echo Upewnij się, że nazwa pliku to Idiot.cs a nie Idiot.cs.txt
-    pause
-    exit /b
-)
-
-echo [PROCESS] Budowanie Idiot.exe...
 "%csc%" /target:winexe /optimize /out:Idiot.exe Idiot.cs
 
-if %errorlevel% equ 0 (
-    echo.
-    echo [SUKCES] Plik Idiot.exe jest gotowy w lol-main.
-    echo Pikobelo.
+echo.
+if exist Idiot.exe (
+    echo [PIKOBELO] Sukces! Idiot.exe gotowy.
 ) else (
-    echo.
-    echo [STOP] Kompilacja nieudana. Sprawdź błędy powyżej.
+    echo [BLAD] Cos poszlo nie tak. Przeczytaj bledy powyzej.
 )
-
 pause
