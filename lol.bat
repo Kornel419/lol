@@ -1,25 +1,37 @@
 @echo off
+setlocal
+:: Przejście do folderu roboczego
 cd /d "%~dp0"
-title Idiot Compiler - HARD MODE
+title Naprawa błędu CS2001
 
-:: 1. Kopiujemy kompilator do Twojego folderu lol-main, zeby nie bylo problemow ze sciezkami
-copy "C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe" "csc_local.exe" >nul
-copy "C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe.config" "csc_local.exe.config" >nul
+:: 1. Znajdź ścieżkę do kompilatora
+set "csc=C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe"
 
-echo [!] Kompilator skopiowany lokalnie do lol-main.
-echo [!] Plik do kompilacji: Idiot.cs
+echo [START] Folder: "%cd%"
+echo [!] Szukam pliku "Idiot.cs"...
 
-:: 2. Odpalamy kompilacje z lokalnego pliku
-csc_local.exe /target:winexe /optimize /out:Idiot.exe Idiot.cs
+:: 2. Sprawdź, czy plik fizycznie istnieje przez komendę DIR
+dir "Idiot.cs" >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [BŁĄD] Komenda DIR nie widzi pliku Idiot.cs w tym folderze!
+    echo Sprawdzam wszystkie pliki .cs w folderze:
+    dir /b *.cs
+    pause
+    exit /b
+)
 
-echo.
-if exist Idiot.exe (
-    echo [PIKOBELO] Idiot.exe stworzony pomyślnie!
-    :: Sprzątamy po sobie
-    del csc_local.exe
-    del csc_local.exe.config
+echo [OK] Plik znaleziony. Próbuję skompilować...
+
+:: 3. Kompilacja z WYMUSZONYM cudzysłowem dla ścieżki
+"%csc%" /target:winexe /optimize /out:"Idiot.exe" "%~dp0Idiot.cs"
+
+if exist "Idiot.exe" (
+    echo.
+    echo [PIKOBELO] Idiot.exe został stworzony!
 ) else (
-    echo [ERROR] Kompilacja nieudana. Sprawdz bledy powyzej.
+    echo.
+    echo [BŁĄD] Kompilator nadal wyrzuca CS2001? 
+    echo Spróbuj kliknąć Prawym na Idiot.cs -> Właściwości -> Odblokuj.
 )
 
 pause
