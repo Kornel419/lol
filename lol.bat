@@ -1,22 +1,29 @@
 @echo off
-title Idiot Compiler
+:: Wymuszenie folderu, w którym jest ten plik .bat
+cd /d "%~dp0"
+title Kompilator Idiot.cs
+
+:: Sciezka do kompilatora
 set "csc=C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe"
 
-if not exist "%csc%" (
-    echo [!] Nie widze kompilatora w glownym folderze v4.0.
-    echo [!] Szukam gdziekolwiek...
-    for /r C:\Windows\Microsoft.NET\Framework %%i in (csc.exe) do set "csc=%%i"
+echo [INFO] Folder roboczy: %cd%
+echo [INFO] Szukam pliku: Idiot.cs
+
+if not exist "Idiot.cs" (
+    echo [ERROR] Nie widze pliku Idiot.cs! 
+    echo Upewnij sie, ze nazwa to Idiot.cs a nie Idiot.cs.txt
+    dir /b
+    pause
+    exit
 )
 
-echo Kompilator: %csc%
-echo Plik: Idiot.cs
-
+echo [PROCESS] Kompilacja...
 "%csc%" /target:winexe /optimize /out:Idiot.exe Idiot.cs
 
-echo.
-if exist Idiot.exe (
-    echo [PIKOBELO] Sukces! Idiot.exe gotowy.
+if exist "Idiot.exe" (
+    echo [SUKCES] Pikobelo! Plik Idiot.exe stworzony.
 ) else (
-    echo [BLAD] Cos poszlo nie tak. Przeczytaj bledy powyzej.
+    echo [BLAD] Kompilacja sie nie udala.
 )
+
 pause
