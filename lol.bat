@@ -1,38 +1,18 @@
 @echo off
-color b
-setlocal
-:: Przejście do folderu roboczego
-cd /d "%~dp0"
-title Naprawa błędu CS2001
+set CSC_PATH=C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe
 
-:: 1. Znajdź ścieżkę do kompilatora
-set "csc=C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe"
-
-echo [START] Folder: "%cd%"
-echo [!] Szukam pliku "Idiot.cs"...
-
-:: 2. Sprawdź, czy plik fizycznie istnieje przez komendę DIR
-dir "Idiot.cs" >nul 2>&1
-if %errorlevel% neq 0 (
-    echo [BŁĄD] Komenda DIR nie widzi pliku Idiot.cs w tym folderze!
-    echo Sprawdzam wszystkie pliki .cs w folderze:
-    dir /b *.cs
+if not exist %CSC_PATH% (
+    echo [ERROR] Nie znaleziono kompilatora .NET 4.0!
     pause
-    exit /b
+    exit
 )
 
-echo [OK] Plik znaleziony. Próbuję skompilować...
+echo Kompilowanie Idiot.cs...
+%CSC_PATH% /target:winexe /out:Idiot.exe /unsafe /r:System.Windows.Forms.dll /r:System.Drawing.dll Idiot.cs
 
-:: 3. Kompilacja z WYMUSZONYM cudzysłowem dla ścieżki
-"%csc%" /target:winexe /optimize /out:"Idiot.exe" "%~dp0Idiot.cs"
-
-if exist "Idiot.exe" (
-    echo.
-    echo [PIKOBELO] Idiot.exe został stworzony!
+if %errorlevel%==0 (
+    echo [SUKCES] Plik Idiot.exe zostal utworzony!
 ) else (
-    echo.
-    echo [BŁĄD] Kompilator nadal wyrzuca CS2001? 
-    echo Spróbuj kliknąć Prawym na Idiot.cs -> Właściwości -> Odblokuj.
+    echo [BLAD] Kompilacja sie nie udala. Sprawdz bledy powyzej.
 )
-
 pause
