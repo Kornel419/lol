@@ -1,0 +1,64 @@
+<html>
+<head>
+<title>Przeglądarka z blokadą</title>
+<hta:application id="app" applicationname="BlokadaGoogle" border="thin" maximizebutton="yes" minimizebutton="yes" sysmenu="yes"/>
+<style>
+body{margin:0;font-family:Arial;}
+#topbar{background:#222;color:white;padding:10px;display:flex;gap:10px;}
+input{flex:1;padding:5px;}
+button{padding:5px 10px;cursor:pointer;}
+iframe{width:100%;height:80vh;border:none;}
+#overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);color:white;display:none;justify-content:center;align-items:center;font-size:30px;z-index:999;}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+<input id="urlInput" placeholder="Wpisz adres lub słowo do Google..." />
+<button onclick="go()">Idź</button>
+</div>
+
+<iframe id="frame" src="https://www.google.com/webhp?igu=1"></iframe>
+<div id="overlay">🚫 Ta strona jest zablokowana</div>
+
+<script language="javascript">
+function loadBlocked(){
+  var fso=new ActiveXObject("Scripting.FileSystemObject");
+  var file=fso.OpenTextFile("blocked.txt",1);
+  var sites=[];
+  while(!file.AtEndOfStream){
+    var line=file.ReadLine().trim();
+    if(line) sites.push(line);
+  }
+  file.Close();
+  return sites;
+}
+
+function isBlocked(url,blockedSites){
+  return blockedSites.some(site=>url.includes(site));
+}
+
+function go(){
+  var input=document.getElementById("urlInput").value.trim();
+  if(!input) return;
+  var blockedSites=loadBlocked();
+  
+  // jeśli ktoś wpisze "facebook.com" blokujemy
+  if(isBlocked(input,blockedSites)){
+    document.getElementById("overlay").style.display="flex";
+    document.getElementById("frame").src="";
+    return;
+  }
+
+  document.getElementById("overlay").style.display="none";
+
+  // jeśli to nie URL, traktujemy jak wyszukiwanie Google
+  if(!input.startsWith("http")){
+    input="https://www.google.com/search?q="+encodeURIComponent(input);
+  }
+  document.getElementById("frame").src=input;
+}
+</script>
+
+</body>
+</html>
