@@ -1,34 +1,36 @@
 @echo off
-title CHIPS x32 COMPILER
-color 0b
+title CHIPS x32 XP COMPILER
+color 0a
 
-echo [*] Szukanie kompilatora .NET Framework...
+echo [*] Szukanie kompilatora .NET na Windows XP...
 
-:: Sprawdzanie ścieżki do kompilatora CSC
-set "csc=C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe"
+:: Sprawdzamy najpierw wersje 3.5, potem 2.0 (najczestsze na XP)
+set "csc="
+if exist "C:\Windows\Microsoft.NET\Framework\v3.5\csc.exe" set "csc=C:\Windows\Microsoft.NET\Framework\v3.5\csc.exe"
+if not defined csc if exist "C:\Windows\Microsoft.NET\Framework\v2.0.50727\csc.exe" set "csc=C:\Windows\Microsoft.NET\Framework\v2.0.50727\csc.exe"
+if not defined csc if exist "C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe" set "csc=C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe"
 
-if not exist "%csc%" (
-    echo [!] Blad: Nie znaleziono kompilatora .NET 4.0.
+if not defined csc (
+    echo [!] BLAD: Nie znaleziono zadnego .NET Framework!
+    echo Zainstaluj .NET Framework 2.0 lub 3.5 Redistributable.
     pause
     exit
 )
 
-echo [+] Znaleziono: %csc%
-echo [*] Kompilacja Program.cs do Chips32.exe (Tryb x86)...
+echo [+] Znaleziono kompilator: %csc%
+echo [*] Kompilacja dla Windows XP (x32)...
 
-:: /platform:x86 - wymusza architekturę 32-bitową
-:: /target:winexe - tworzy aplikację okienkową (bez zbędnej konsoli w tle)
-:: /r:System.Drawing.dll,System.Windows.Forms.dll - dodaje wymagane biblioteki
-"%csc%" /target:winexe /platform:x86 /r:System.Drawing.dll,System.Windows.Forms.dll /out:Chips32.exe Program.cs
+:: Na XP komenda jest prostsza, nie potrzebujemy wymuszania platformy x86, bo XP i tak jest x32
+"%csc%" /target:winexe /out:ChipsXP.exe Program.cs /r:System.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll
 
 if %errorlevel%==0 (
     echo.
     echo ========================================
-    echo [SUKCES] Plik Chips32.exe jest gotowy!
+    echo   [SUKCES] ChipsXP.exe zostal utworzony!
     echo ========================================
 ) else (
     echo.
-    echo [!] BLAD KOMPILACJI. Sprawdz kod w Program.cs.
+    echo [!] BLAD KOMPILACJI! Sprawdz kod w Program.cs.
 )
 
 pause
