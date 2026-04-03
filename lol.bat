@@ -1,22 +1,34 @@
 @echo off
-:: Przejdz do folderu, w ktorym jest ten BAT
-cd /d "%~dp0"
+title CHIPS x32 COMPILER
+color 0b
 
-set CSC_PATH=C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe
+echo [*] Szukanie kompilatora .NET Framework...
 
-if not exist "Idiot.cs" (
-    echo [BLAD] Nie widze pliku Idiot.cs w tym folderze!
-    echo Obecny folder to: %cd%
+:: Sprawdzanie ścieżki do kompilatora CSC
+set "csc=C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe"
+
+if not exist "%csc%" (
+    echo [!] Blad: Nie znaleziono kompilatora .NET 4.0.
     pause
     exit
 )
 
-echo Kompilowanie...
-%CSC_PATH% /target:winexe /out:Idiot.exe /unsafe /r:System.Windows.Forms.dll /r:System.Drawing.dll Idiot.cs
+echo [+] Znaleziono: %csc%
+echo [*] Kompilacja Program.cs do Chips32.exe (Tryb x86)...
+
+:: /platform:x86 - wymusza architekturę 32-bitową
+:: /target:winexe - tworzy aplikację okienkową (bez zbędnej konsoli w tle)
+:: /r:System.Drawing.dll,System.Windows.Forms.dll - dodaje wymagane biblioteki
+"%csc%" /target:winexe /platform:x86 /r:System.Drawing.dll,System.Windows.Forms.dll /out:Chips32.exe Program.cs
 
 if %errorlevel%==0 (
-    echo [PIKOBELO] Idiot.exe gotowy!
+    echo.
+    echo ========================================
+    echo [SUKCES] Plik Chips32.exe jest gotowy!
+    echo ========================================
 ) else (
-    echo [ZONK] Cos nie tak w kodzie.
+    echo.
+    echo [!] BLAD KOMPILACJI. Sprawdz kod w Program.cs.
 )
+
 pause
