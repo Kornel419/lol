@@ -1,24 +1,55 @@
 @echo off
-title CHIPS COMPILER x64
-color 0C
-echo [*] Szukanie kompilatora .NET Framework...
+title CHIPS SOURCE FIXER !@#$%^&*()_+
+color 0e
 
-:: Lokalizacja csc.exe dla .NET 4.0 (standard w Win 10/11)
-set "csc=C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+echo [*] Sprawdzanie pliku source...
 
-if not exist "%csc%" (
-    echo [!] BLAD: Nie znaleziono kompilatora .NET 4.0 x64!
+:: 1. Naprawa rozszerzenia (jeśli zapisałeś jako .txt)
+if exist "source.cs.txt" (
+    echo [!] Znaleziono source.cs.txt - poprawiam nazwe...
+    ren "source.cs.txt" "source.cs"
+)
+
+:: 2. Sprawdzenie czy plik w ogóle istnieje
+if not exist "source.cs" (
+    echo [!] BLAD: Nadal nie widze pliku source.cs!
+    echo [?] Upewnij sie, ze ten skrypt .bat jest w TYM SAMYM folderze co kod.
+    dir /b
     pause
     exit
 )
 
-echo [*] Kompilacja source.cs -> CHIPS_OMEGA.exe...
+echo [OK] Plik source.cs znaleziony. Szukam kompilatora...
+
+:: 3. Szukanie kompilatora w systemie
+set "csc="
+for /r "C:\Windows\Microsoft.NET\Framework64" %%f in (csc.exe) do (
+    if exist "%%f" set "csc=%%f"
+)
+if not defined csc (
+    for /r "C:\Windows\Microsoft.NET\Framework" %%f in (csc.exe) do (
+        if exist "%%f" set "csc=%%f"
+    )
+)
+
+if not defined csc (
+    echo [!] Nie znaleziono kompilatora .NET!
+    pause
+    exit
+)
+
+echo [OK] Kompilator: %csc%
+echo [*] Budowanie potwora CHIPS_OMEGA...
+
 "%csc%" /target:winexe /out:CHIPS_OMEGA.exe /r:System.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll source.cs
 
-if %errorlevel% neq 0 (
-    echo [!] Blad podczas kompilacji! Sprawdz kod zrodlowy.
+if exist "CHIPS_OMEGA.exe" (
+    echo.
+    echo ========================================
+    echo [!!!] SUKCES! Plik CHIPS_OMEGA.exe gotowy.
+    echo [!!!] PAMIETAJ: URUCHOM JAKO ADMIN NA VM!
+    echo ========================================
 ) else (
-    echo [OK] Kompilacja zakonczona sukcesem!
-    echo [!] PLIK: CHIPS_OMEGA.exe
+    echo [!] Kompilacja nie powiodla sie. Sprawdz bledy powyzej.
 )
 pause
