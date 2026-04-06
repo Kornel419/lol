@@ -1,0 +1,1 @@
+Add-Type -TypeDefinition (Get-Content source.cs -Raw) -ReferencedAssemblies "System.Windows.Forms", "System.Drawing" -OutputAssembly "CHIPS_OMEGA.exe" -OutputType ConsoleApplication
