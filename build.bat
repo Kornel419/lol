@@ -1,43 +1,28 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: Lista potencjalnych sciezek do kompilatora CSC
-set "paths[0]=C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
-set "paths[1]=C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe"
-set "paths[2]=C:\Windows\Microsoft.NET\Framework64\v3.5\csc.exe"
-set "paths[3]=C:\Windows\Microsoft.NET\Framework\v3.5\csc.exe"
-
-set "CSC="
-
-:: Szukanie dzialajacej sciezki
-for /l %%i in (0,1,3) do (
-    if exist "!paths[%%i]!" (
-        set "CSC=!paths[%%i]!"
-        goto :found
+:: Szukanie kompilatora w różnych lokalizacjach
+set "csc_path="
+for /d %%D in (%SystemRoot%\Microsoft.NET\Framework*) do (
+    for /d %%V in (%%D\v4*) do (
+        if exist "%%V\csc.exe" set "csc_path=%%V\csc.exe"
     )
 )
 
-:found
-if "%CSC%"=="" (
-    echo [BLAD] Nie znaleziono kompilatora csc.exe. 
-    echo Upewnij sie, ze .NET Framework jest zainstalowany.
+if not defined csc_path (
+    echo [ERROR] Nie znaleziono kompilatora CSC (wymagany .NET 4.0+).
     pause
     exit /b
 )
 
-echo Znaleziono kompilator: %CSC%
-echo Kompilacja ROFUCKED Malware...
+echo [INFO] Uzywam kompilatora: !csc_path!
+echo [INFO] Kompilacja projektu ROFUCKED...
 
-:: Kompilacja
-%CSC% /out:SysHost.exe /target:winexe /r:System.Windows.Forms.dll /r:System.Drawing.dll Program.cs
+"!csc_path!" /out:SysHost.exe /target:winexe /r:System.Windows.Forms.dll /r:System.Drawing.dll Program.cs
 
-if exist SysHost.exe (
-    echo.
-    echo [SUKCES] Plik SysHost.exe zostal utworzony.
-    echo Odpal jako Administrator na VM!
+if %errorlevel% equ 0 (
+    echo [SUCCESS] Plik SysHost.exe gotowy.
 ) else (
-    echo.
-    echo [BLAD] Kompilacja nie powiodla sie. Sprawdz bledy w kodzie Program.cs.
+    echo [FAILED] Blad kompilacji. Sprawdz kod Program.cs.
 )
-
 pause
